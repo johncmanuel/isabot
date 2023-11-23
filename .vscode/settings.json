@@ -1,0 +1,12 @@
+{
+	"json.schemas": [],
+	"[python]": {
+		"editor.defaultFormatter": "ms-python.autopep8",
+		"editor.formatOnSave": true,
+		"editor.codeActionsOnSave": { "source.organizeImports": true }
+	},
+	// "python.linting.flake8Args": ["--verbose", "--extend-ignore="]
+	"python.testing.pytestEnabled": true,
+	"python.testing.pytestArgs": ["-rP", "-v"],
+	"python.testing.cwd": "${workspaceFolder}/tests/"
+}
