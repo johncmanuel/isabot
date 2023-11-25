@@ -1,6 +1,14 @@
 # Isabot
 
-Discord bot for AR Club's Discord Server
+Discord bot for AR Club's Discord Server. This bot will send weekly guild leaderboards of various types to the Discord server via webhook. Leaderboards may include: most number of mounts, most wins in Arenas/Battlegrounds, etc. For leaderboards in most wins in Arenas/Battlegrounds, this will be reset weekly at some particular date.
+
+All of the data will be recorded in a cloud database (most likely Google's Firestore).
+
+## Technology
+
+1. [FastAPI](https://fastapi.tiangolo.com/)
+2. [Discord API and webhooks](https://discord.com/developers/docs/intro)
+3. [Blizzard's WoW API](https://develop.battle.net/documentation/world-of-warcraft)
 
 ## Getting Started
 
