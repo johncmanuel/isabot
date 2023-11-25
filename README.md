@@ -4,6 +4,8 @@ Discord bot for AR Club's Discord Server. This bot will send weekly guild leader
 
 All of the data will be recorded in a cloud database (most likely Google's Firestore).
 
+The idea of having weekly leaderboards was inspired by Ethan's [lc-dailies project.](https://github.com/acmcsufoss/lc-dailies)
+
 ## Technology
 
 1. [FastAPI](https://fastapi.tiangolo.com/)
