@@ -35,3 +35,13 @@ from pydantic import BaseModel
 #     type: ApplicationCommandPermissionType
 #     description: str
 #     options: List[Option]
+
+
+class APIInteractionType(IntEnum):
+    """https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-type"""
+
+    ApplicationCommand = 2
+    ApplicationCommandAutocomplete = 4
+    MessageComponent = 3
+    ModalSubmit = 5
+    Ping = 1
