@@ -3,6 +3,8 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel
 
+""" These types may either be replaced by a library that implements typings for Discord's API or be further expanded upon. """
+
 # class ApplicationCommandPermissionType(IntEnum):
 #     """
 #     https://discord.com/developers/docs/interactions/application-commands#application-command-permissions-object-application-command-permission-type
@@ -45,3 +47,17 @@ class APIInteractionType(IntEnum):
     MessageComponent = 3
     ModalSubmit = 5
     Ping = 1
+
+
+class ApplicationCommandOptionType(IntEnum):
+    SubCommand = 1
+    SubCommandGroup = 2
+    String = 3
+    Integer = 4
+    Boolean = 5
+    User = 6
+    Channel = 7
+    Role = 8
+    Mentionable = 9
+    Number = 10
+    Attachment = 11
