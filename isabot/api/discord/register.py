@@ -1,7 +1,7 @@
 REGISTER_NAME = "register"
 REGISTER_DESC = "Register your BattleNet account"
-REGISTER_BNET_NAME = "bnet_name"
-REGISTER_BNET_DESC = "Your BattleNet account"
+REGISTER_BNET_NAME = "battle_tag"
+REGISTER_BNET_DESC = "Your Battle Tag"
 
 REGISTER = {
     "name": REGISTER_NAME,
