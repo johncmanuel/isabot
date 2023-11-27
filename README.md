@@ -14,13 +14,18 @@ The idea of having weekly leaderboards was inspired by Ethan's [lc-dailies proje
 
 ## Getting Started
 
+Install [Poetry, a tool for managing packages within a virtual environment.](https://python-poetry.org/)
+
 Install packages: `poetry install`
 
-Run the server with: `poetry run uvicorn main:app --reload`
+Then, inject a plugin for Poetry called [Export.](https://github.com/python-poetry/poetry-plugin-export)
 
-If you choose not to use build tools such as Poetry, perform the following operations:
+This plugin will help with exporting `poetry.lock` into other formats such as `requirements.txt`.
+
+When managing packages, be sure to create a `requirements.txt` that lists the latest packages used in this project.
 
 ```bash
-pip install
-uvicorn main:app --reload
+poetry export -f requirements.txt --output requirements.txt --without-hashes
 ```
+
+Run the server with: `poetry run uvicorn main:app --reload`
