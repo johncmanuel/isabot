@@ -3,7 +3,9 @@
 	"[python]": {
 		"editor.defaultFormatter": "ms-python.black-formatter",
 		"editor.formatOnSave": true,
-		"editor.codeActionsOnSave": { "source.organizeImports": true }
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "explicit"
+		}
 	},
 	// "python.linting.flake8Args": ["--verbose", "--extend-ignore="]
 	"python.testing.pytestEnabled": true,
