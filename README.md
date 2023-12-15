@@ -18,11 +18,9 @@ Install [Poetry, a tool for managing packages within a virtual environment.](htt
 
 Install packages: `poetry install`
 
-Then, inject a plugin for Poetry called [Export.](https://github.com/python-poetry/poetry-plugin-export)
+Then, inject a plugin for Poetry called [Export](https://github.com/python-poetry/poetry-plugin-export). This plugin will help with exporting `poetry.lock` into other formats such as `requirements.txt`.
 
-This plugin will help with exporting `poetry.lock` into other formats such as `requirements.txt`.
-
-When managing packages, be sure to create a `requirements.txt` that lists the latest packages used in this project.
+Use the below command to convert `poetry.lock` to `requirements.txt`:
 
 ```bash
 poetry export -f requirements.txt --output requirements.txt --without-hashes
