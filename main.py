@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from mangum import Mangum
 
 from env import DISCORD_APP_ID, DISCORD_TOKEN
 from isabot.api import api
@@ -19,3 +20,4 @@ async def setup_app(app: FastAPI):
 
 app = FastAPI(lifespan=setup_app)
 app.include_router(api.router)
+handler = Mangum(app)

@@ -464,6 +464,20 @@ files = [
 ]
 
 [[package]]
+name = "mangum"
+version = "0.17.0"
+description = "AWS Lambda support for ASGI applications"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mangum-0.17.0-py3-none-any.whl", hash = "sha256:f00be705605bc4793958df62e4d249abf58d254c39d90bb410d069570206f4a2"},
+    {file = "mangum-0.17.0.tar.gz", hash = "sha256:5b4e26375e12eed051687670466d17968f8b74beecaca432edd4eb4127f78509"},
+]
+
+[package.dependencies]
+typing-extensions = "*"
+
+[[package]]
 name = "mccabe"
 version = "0.7.0"
 description = "McCabe checker, plugin for flake8"
@@ -1255,4 +1269,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "539883a21f4dfc273eb8d267ccb92c69f4d3dccdeac7866df8bf2e0f586a87ce"
+content-hash = "27704974d242d31d351f032204e1ef28e9a449906a17bcb93d7e2ae760c8de9c"
