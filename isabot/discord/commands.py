@@ -32,15 +32,3 @@ async def register_slash_command(data: dict, token: str, app_id: str) -> None:
                     f"Failed to register command: {response.status} {response.text}"
                 )
             print(response.status, await response.json())
-
-
-async def delete_slash_command(app_id: str, cmd_id: str) -> None:
-    """Mainly used for development purposes; will not be used in production."""
-    async with ClientSession() as session:
-        async with session.delete(get_global_app_cmd_url(app_id, cmd_id)) as response:
-            if not response.ok:
-                print("something went wrong", await response.text())
-                raise Exception(
-                    f"Failed to delete command: {response.status} {response.text}"
-                )
-            print(response.status, await response.json())
