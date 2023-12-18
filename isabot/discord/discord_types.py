@@ -49,7 +49,21 @@ class APIInteractionType(IntEnum):
     Ping = 1
 
 
+class APIInteractionResponseType(IntEnum):
+    """https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type"""
+
+    Pong = 1
+    ChannelMessageWithSource = 4
+    DeferredChannelMessageWithSource = 5
+    DeferredUpdateMessage = 6
+    UpdateMessage = 7
+    ApplicationCommandAutocompleteResult = 8
+    Modal = 9
+
+
 class ApplicationCommandOptionType(IntEnum):
+    """https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-option-type"""
+
     SubCommand = 1
     SubCommandGroup = 2
     String = 3
