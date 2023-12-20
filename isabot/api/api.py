@@ -10,8 +10,11 @@ router = APIRouter()
 
 @router.post("/")
 async def root(req: Request, res: Response):
-    interaction_res = handle_discord_app(req, DISCORD_PUBLIC_KEY, DISCORD_CHANNEL_ID)
-    return Response(interaction_res)
+    """Handle interactions here"""
+    interaction_res = await handle_discord_app(
+        req, DISCORD_PUBLIC_KEY, DISCORD_CHANNEL_ID
+    )
+    return interaction_res
 
 
 @router.post("/webhook")

@@ -1,10 +1,6 @@
 from fastapi import Request, Response
-from nacl.encoding import HexEncoder
+from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
-
-
-def hex_to_bytes(hex_str: str):
-    return bytes.fromhex(hex_str)
 
 
 async def verify_request(req: Request, public_key: str):
@@ -16,28 +12,25 @@ async def verify_request(req: Request, public_key: str):
     signature, timestamp = req.headers.get("X-Signature-Ed25519"), req.headers.get(
         "X-Signature-Timestamp"
     )
-    if not signature:
+
+    if not timestamp or not signature:
         return {
-            "error": Response("Missing header: X-Signature-Ed25519", 401),
-            "body": None,
-        }
-    if not timestamp:
-        return {
-            "error": Response("Missing header: X-Signature-Timestamp", 401),
+            "error": Response("Bad request", 401),
             "body": None,
         }
 
     body = await req.body()
+    key = VerifyKey(bytes.fromhex(public_key))
 
-    message = timestamp.encode("utf-8") + body
-    valid = VerifyKey(hex_to_bytes(public_key), encoder=HexEncoder).verify(
-        message, hex_to_bytes(signature)
-    )
-
-    if not valid:
+    try:
+        key.verify(
+            timestamp.encode() + body,
+            bytes.fromhex(signature),
+        )
+    except BadSignatureError as e:
         return {
-            "error": Response("Invalid request", 401),
+            "error": Response("Bad signature", 401),
             "body": None,
         }
 
-    return {"body": req.json(), "error": None}
+    return {"body": await req.json(), "error": None}
