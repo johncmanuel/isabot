@@ -27,8 +27,9 @@ async def register_slash_command(data: dict, token: str, app_id: str) -> None:
             json=data,
         ) as response:
             if not response.ok:
-                print("something went wrong", await response.text())
                 raise Exception(
-                    f"Failed to register command: {response.status} {response.text}"
+                    f"Failed to register command: {response.status} {await response.text()}"
                 )
-            print(response.status, await response.json())
+            print(
+                "Registering slash command...", response.status, await response.json()
+            )
