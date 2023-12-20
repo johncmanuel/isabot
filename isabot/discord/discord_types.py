@@ -75,3 +75,9 @@ class ApplicationCommandOptionType(IntEnum):
     Mentionable = 9
     Number = 10
     Attachment = 11
+
+
+class APIInteractionResponseFlags(IntEnum):
+    """https://discord.com/developers/docs/resources/channel#message-object-message-flags"""
+
+    Ephemeral = 1 << 6

@@ -4,7 +4,10 @@ from nacl.signing import VerifyKey
 
 
 async def verify_request(req: Request, public_key: str):
-    """Verify if the incoming request is from Discord."""
+    """
+    Verify if the incoming request is from Discord.
+    Docs: https://discord.com/developers/docs/interactions/receiving-and-responding#security-and-authorization
+    """
 
     if req.headers.get("Content-Type") != "application/json":
         return {"error": Response("Unsupported media type", 415), "body": None}
