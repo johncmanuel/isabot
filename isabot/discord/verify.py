@@ -1,5 +1,6 @@
 from fastapi import Request, Response
-from nacl import encoding, signing
+from nacl.encoding import HexEncoder
+from nacl.signing import VerifyKey
 
 
 def hex_to_bytes(hex_str: str):
@@ -8,8 +9,10 @@ def hex_to_bytes(hex_str: str):
 
 async def verify_request(req: Request, public_key: str):
     """Verify if the incoming request is from Discord."""
+
     if req.headers.get("Content-Type") != "application/json":
         return {"error": Response("Unsupported media type", 415), "body": None}
+
     signature, timestamp = req.headers.get("X-Signature-Ed25519"), req.headers.get(
         "X-Signature-Timestamp"
     )
@@ -27,9 +30,9 @@ async def verify_request(req: Request, public_key: str):
     body = await req.body()
 
     message = timestamp.encode("utf-8") + body
-    valid = signing.VerifyKey(
-        hex_to_bytes(public_key), encoder=encoding.HexEncoder
-    ).verify(message, hex_to_bytes(signature))
+    valid = VerifyKey(hex_to_bytes(public_key), encoder=HexEncoder).verify(
+        message, hex_to_bytes(signature)
+    )
 
     if not valid:
         return {
