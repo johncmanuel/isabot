@@ -21,7 +21,7 @@ async def handle_register_cmd() -> JSONResponse:
         {
             "type": APIInteractionResponseType.ChannelMessageWithSource,
             "data": {
-                "content": "it works",
+                "content": f"Your battle tag was registered!",
                 "flags": APIInteractionResponseFlags.Ephemeral,
             },
         }
