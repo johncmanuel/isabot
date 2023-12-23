@@ -27,3 +27,14 @@ poetry export -f requirements.txt --output requirements.txt --without-hashes
 ```
 
 Run the server with: `poetry run uvicorn main:app --reload`
+
+## Development
+
+Use [ngrok](https://ngrok.com/) to test features such as OAuth:
+
+```bash
+# default port of app is 8000
+ngrok http --domain=<your assigned domain> 8000
+# or (if not using a domain)
+ngrok http 8000
+```
