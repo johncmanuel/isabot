@@ -14,6 +14,6 @@ certificate = Certificate(
     }
 )
 
-firebase = initialize_app(credential=certificate)
+initialize_app(credential=certificate)
 
 db = firestore.client()
