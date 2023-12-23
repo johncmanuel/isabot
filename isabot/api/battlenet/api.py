@@ -7,7 +7,9 @@ from authlib.integrations.starlette_client import OAuthError
 from fastapi import APIRouter, Request, Response
 from starlette.responses import HTMLResponse
 
-from isabot.battlenet.auth import oauth
+from env import BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET
+from isabot.battlenet.constants import BATTLENET_OAUTH_TOKEN_URI
+from isabot.battlenet.oauth import cc_get_access_token, oauth
 
 router = APIRouter()
 
