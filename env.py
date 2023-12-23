@@ -29,3 +29,13 @@ BATTLENET_CLIENT_SECRET = handle_getenv("BATTLENET_CLIENT_SECRET")
 BATTLENET_CLIENT_ID = handle_getenv("BATTLENET_CLIENT_ID")
 
 PORT = int(handle_getenv("PORT", "8000"))
+
+APP_URL = handle_getenv("APP_URL", f"https://localhost:{PORT}")
+
+FIREBASE_PROJECT_ID = handle_getenv("FIREBASE_PROJECT_ID")
+
+FIREBASE_CLIENT_EMAIL = handle_getenv("FIREBASE_CLIENT_EMAIL")
+
+FIREBASE_PRIVATE_KEY = handle_getenv("FIREBASE_PRIVATE_KEY")
+
+FIREBASE_DB_URL = handle_getenv("FIREBASE_DB_URL")

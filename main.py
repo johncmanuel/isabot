@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from env import DISCORD_APP_ID, DISCORD_TOKEN
-from isabot.api import api
+from isabot.api.api import router as api_router
+from isabot.api.battlenet.api import router as auth_router
 from isabot.api.discord import base
 from isabot.discord import commands
 
@@ -18,4 +21,11 @@ async def setup_app(app: FastAPI):
 
 
 app = FastAPI(lifespan=setup_app)
-app.include_router(api.router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+)
+app.add_middleware(SessionMiddleware, secret_key="SEEECRET")
+app.include_router(api_router)
+app.include_router(auth_router)
