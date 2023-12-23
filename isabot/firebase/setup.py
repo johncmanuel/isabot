@@ -1,12 +1,7 @@
 from firebase_admin import firestore, initialize_app
 from firebase_admin.credentials import Certificate
 
-from env import (
-    FIREBASE_CLIENT_EMAIL,
-    FIREBASE_DB_URL,
-    FIREBASE_PRIVATE_KEY,
-    FIREBASE_PROJECT_ID,
-)
+from env import FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_PROJECT_ID
 
 certificate = Certificate(
     {
@@ -19,8 +14,6 @@ certificate = Certificate(
     }
 )
 
-firebase = initialize_app(
-    credential=certificate, options={"databaseURL": FIREBASE_DB_URL}
-)
+firebase = initialize_app(credential=certificate)
 
 db = firestore.client()
