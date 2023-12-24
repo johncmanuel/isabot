@@ -1,23 +1,24 @@
 # https://develop.battle.net/documentation/world-of-warcraft/guides/namespaces
 BATTLENET_REGION = "us"
 
+# Available options are: Static, Dynamic, and Profile
 BATTLENET_NAMESPACES = {
-    "Static": f"static-{BATTLENET_REGION}",
-    "Dynamic": f"dynamic-{BATTLENET_REGION}",
-    "Profile": f"profile-{BATTLENET_REGION}",
+    "static": f"static-{BATTLENET_REGION}",
+    "dynamic": f"dynamic-{BATTLENET_REGION}",
+    "profile": f"profile-{BATTLENET_REGION}",
 }
 
 BATTLENET_LOCALE = "en_US"
 
-BATTLENET_URL = f"{BATTLENET_REGION}.api.blizzard.com"
+BATTLENET_URL = f"https://{BATTLENET_REGION}.api.blizzard.com"
 
-BATTLENET_ALT_URL = f"{BATTLENET_REGION}.battle.net"
+BATTLENET_ALT_URL = f"https://{BATTLENET_REGION}.battle.net"
 
 # Slug name for AR Club
 GUILD_NAME = "ar-club"
 
-# Slug name for AR Club's realm, Shandris
-GUILD_REALM = "shandris"
+# Slug name for AR Club's realm, Bronzebeard-Shandris
+GUILD_REALM = ("shandris", "bronzebeard")
 
 BATTLENET_OAUTH_URL = "https://oauth.battle.net"
 

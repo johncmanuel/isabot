@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request, Response
 from starlette.responses import HTMLResponse
 
 from env import BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET
+from isabot.battlenet.account import *
 from isabot.battlenet.constants import BATTLENET_OAUTH_TOKEN_URI
 from isabot.battlenet.oauth import cc_get_access_token, oauth
 
@@ -28,4 +29,11 @@ async def auth(request: Request):
         return HTMLResponse(f"<h1>OAuthError: {error.error}</h1>")
     except Exception as error:
         return HTMLResponse(f"<h1>Exception: {error}</h1>")
-    return Response("Success!")
+    print(token)
+    return Response("Success! You may return to Discord.")
+
+
+# @router.get("/test")
+# async def test(request: Request):
+#     x = await account_mounts_collection()
+#     return x
