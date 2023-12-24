@@ -13,7 +13,7 @@ async def account_user_info(namespace: str = "profile"):
     return await get_bnet_endpt(
         "/userinfo",
         dummy_token,
-        namespace_type=namespace,
+        namespace,
         base_url=BATTLENET_OAUTH_URL,
     )
 

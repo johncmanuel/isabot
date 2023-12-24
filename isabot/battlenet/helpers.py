@@ -48,7 +48,7 @@ def get_namespace(namespace_type: str):
 async def get_bnet_endpt(
     url: str,
     token: str,
-    namespace_type: str = "static",
+    namespace: str = "static",
     base_url: str = BATTLENET_URL,
 ):
     """
@@ -63,7 +63,7 @@ async def get_bnet_endpt(
             url=url,
             headers={
                 "Authorization": get_bnet_authorization_header(token),
-                "Battlenet-Namespace": get_namespace(namespace_type),
+                "Battlenet-Namespace": get_namespace(namespace),
             },
         ) as response:
             if not response.ok:

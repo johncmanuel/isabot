@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from aiohttp import BasicAuth, ClientSession
 from authlib.integrations.starlette_client import OAuth
@@ -58,13 +58,11 @@ async def cc_get_access_token(url: str, client_id: str, client_secret: str):
         raise Exception("Token has no 'expires_in' key.")
 
     token["expires_in"] = (
-        datetime.utcnow() + timedelta(seconds=expiration_date_seconds)
+        datetime.now(timezone.utc) + timedelta(seconds=expiration_date_seconds)
     ).timestamp()
 
     return token
 
 
-async def cc_is_access_token_expired(token: dict):
-    return token["expires_in"] < datetime.utcnow().timestamp()
-    #     return await cc_get_access_token(url, client_id, client_secret)
-    # return token
+async def cc_is_access_token_expired(token: dict) -> bool:
+    return token["expires_in"] < datetime.now(timezone.utc).timestamp()
