@@ -18,9 +18,13 @@ async def account_user_info(namespace: str = "profile"):
     )
 
 
-async def protected_character(namespace: str = "profile"):
+async def protected_character(
+    realm_id: int,
+    character_id: int,
+    namespace: str = "profile",
+):
     return await get_bnet_endpt(
-        "/profile/user/wow/protected-character/1364-102219865",
+        f"/profile/user/wow/protected-character/{realm_id}-{character_id}",
         dummy_token,
         namespace,
     )
