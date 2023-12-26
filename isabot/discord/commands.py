@@ -30,6 +30,4 @@ async def register_slash_command(data: dict, token: str, app_id: str) -> None:
                 raise Exception(
                     f"Failed to register command: {response.status} {await response.text()}"
                 )
-            print(
-                "Registering slash command...", response.status, await response.json()
-            )
+            print("Registering slash command...", response.status)
