@@ -1,7 +1,15 @@
-from datetime import datetime, timedelta, timezone
+# Ongoing issue with the authlib's typings
+# https://github.com/lepture/authlib/issues/527
+# It's probably best to turn off type checkers to avoid errors
+# pyright: reportOptionalMemberAccess=false
+
+from datetime import datetime, timezone
+from typing import Union
 
 from aiohttp import BasicAuth, ClientSession
 from authlib.integrations.starlette_client import OAuth
+from fastapi import Request
+from starlette.datastructures import URL
 
 from env import BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET
 from isabot.battlenet.constants import (
@@ -11,6 +19,7 @@ from isabot.battlenet.constants import (
     BATTLENET_OAUTH_URL,
     BATTLENET_URL,
 )
+from isabot.battlenet.helpers import convert_to_utc_seconds
 
 oauth = OAuth()
 oauth.register(
@@ -29,6 +38,10 @@ oauth.register(
     api_base_url=BATTLENET_URL,
     client_kwargs={"scope": "wow.profile"},
 )
+
+
+async def bnet_redirect_authorization(request: Request, url: Union[URL, str]):
+    return await oauth.battlenet.authorize_redirect(request, redirect_uri=url)
 
 
 # Functions below are for the client credentials flow, not the authorization code flow
@@ -57,9 +70,7 @@ async def cc_get_access_token(url: str, client_id: str, client_secret: str):
     if not expiration_date_seconds:
         raise Exception("Token has no 'expires_in' key.")
 
-    token["expires_in"] = (
-        datetime.now(timezone.utc) + timedelta(seconds=expiration_date_seconds)
-    ).timestamp()
+    token["expires_at"] = convert_to_utc_seconds(expiration_date_seconds)
 
     return token
 

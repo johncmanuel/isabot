@@ -6,7 +6,6 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from env import DISCORD_APP_ID, DISCORD_TOKEN, MIDDLEWARE_SECRET
 from isabot.api.api import router as api_router
-from isabot.api.battlenet.api import router as auth_router
 from isabot.api.discord import base
 from isabot.discord import commands
 
@@ -28,4 +27,3 @@ app.add_middleware(
 )
 app.add_middleware(SessionMiddleware, secret_key=MIDDLEWARE_SECRET)
 app.include_router(api_router)
-app.include_router(auth_router)

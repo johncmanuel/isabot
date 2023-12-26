@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from json import dumps
 from urllib.parse import ParseResult, parse_qsl, unquote, urlencode, urlparse
 
@@ -71,3 +72,7 @@ async def get_bnet_endpt(
                     f"Failed to fetch endpoint: {url} | {await response.text()}"
                 )
             return await response.json()
+
+
+def convert_to_utc_seconds(seconds: int) -> float:
+    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).timestamp()
