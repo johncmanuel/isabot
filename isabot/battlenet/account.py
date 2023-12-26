@@ -1,38 +1,37 @@
 from isabot.battlenet.constants import BATTLENET_OAUTH_URL, GUILD_REALM
 from isabot.battlenet.helpers import get_bnet_endpt
 
-dummy_token = ""
+
+async def account_profile_summary(token: str, namespace: str = "profile"):
+    return await get_bnet_endpt("/profile/user/wow", token, namespace)
 
 
-async def account_profile_summary(namespace: str = "profile"):
-    return await get_bnet_endpt("/profile/user/wow", dummy_token, namespace)
-
-
-async def account_user_info(namespace: str = "profile"):
+async def account_user_info(token: str, namespace: str = "profile"):
     # contains "sub", "id", and "battletag" keys
     return await get_bnet_endpt(
         "/userinfo",
-        dummy_token,
+        token,
         namespace,
         base_url=BATTLENET_OAUTH_URL,
     )
 
 
 async def protected_character(
+    token: str,
     realm_id: int,
     character_id: int,
     namespace: str = "profile",
 ):
     return await get_bnet_endpt(
         f"/profile/user/wow/protected-character/{realm_id}-{character_id}",
-        dummy_token,
+        token,
         namespace,
     )
 
 
-async def account_mounts_collection(namespace: str = "profile"):
+async def account_mounts_collection(token: str, namespace: str = "profile"):
     return await get_bnet_endpt(
-        "/profile/user/wow/collections/mounts", dummy_token, namespace
+        "/profile/user/wow/collections/mounts", token, namespace
     )
 
 
