@@ -1,3 +1,5 @@
+from typing import Optional
+
 from isabot.battlenet.constants import BATTLENET_OAUTH_URL, GUILD_REALM
 from isabot.battlenet.helpers import get_bnet_endpt
 
@@ -20,6 +22,7 @@ async def protected_character(
     token: str,
     realm_id: int,
     character_id: int,
+    url: Optional[str],
     namespace: str = "profile",
 ):
     return await get_bnet_endpt(
@@ -35,11 +38,14 @@ async def account_mounts_collection(token: str, namespace: str = "profile"):
     )
 
 
-async def account_characters(wow_accounts: list[dict]) -> list[dict]:
+async def account_characters(
+    wow_accounts: list[dict], characters_in_guild: bool = False
+) -> list[dict]:
     """
     Retrieves characters for each WoW account that're located in Shandris or Bronzebeard.
 
-    `wow_accounts` should originate from account profile summary response, under the key: "wow_accounts"
+    `wow_accounts` must be a list of dictionaries, where each dict contains information about
+    a WoW character
     """
     accounts = []
     for account in wow_accounts:
@@ -47,7 +53,7 @@ async def account_characters(wow_accounts: list[dict]) -> list[dict]:
         for character in acc_characters:
             # Profile summary (from wow_accounts) doesn't reveal a character's guild,
             # so add the character if they're in the same realm as the guild.
-            if character["realm"]["slug"] in GUILD_REALM:
+            if characters_in_guild and character["realm"]["slug"] in GUILD_REALM:
                 tmp = {}
                 tmp["name"] = character["name"]
                 tmp["id"] = character["id"]

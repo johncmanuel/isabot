@@ -4,16 +4,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from env import DISCORD_APP_ID, DISCORD_TOKEN, MIDDLEWARE_SECRET
+from env import MIDDLEWARE_SECRET
 from isabot.api.api import router as api_router
-from isabot.api.discord import base
-from isabot.discord import commands
+from isabot.api.handlers import handle_setup
 
 
 @asynccontextmanager
 async def setup_app(app: FastAPI):
     """Setup app by registering the slash commands and other stuff"""
-    await commands.register_slash_command(base.BASE, DISCORD_TOKEN, DISCORD_APP_ID)
+    await handle_setup()
     yield
     # clean up anything else before exiting app
     # ...

@@ -20,6 +20,8 @@ from isabot.battlenet.constants import (
     BATTLENET_URL,
 )
 from isabot.battlenet.helpers import convert_to_utc_seconds
+from isabot.battlenet.store import store_cc_access_token
+from isabot.firebase.crud import get_first_doc_in_collection
 
 oauth = OAuth()
 oauth.register(
@@ -63,17 +65,25 @@ async def cc_handler(url: str, client_id: str, client_secret: str):
             return await response.json()
 
 
-async def cc_get_access_token(url: str, client_id: str, client_secret: str):
-    token: dict = await cc_handler(url, client_id, client_secret)
+async def cc_get_access_token(
+    collection_path: str = "client_credentials_token",
+):
+    token = get_first_doc_in_collection(collection_path)
 
-    expiration_date_seconds = token.get("expires_in", None)
-    if not expiration_date_seconds:
-        raise Exception("Token has no 'expires_in' key.")
+    if token and not await is_access_token_expired(token):
+        return token
 
-    token["expires_at"] = convert_to_utc_seconds(expiration_date_seconds)
+    token = await cc_handler(
+        BATTLENET_OAUTH_TOKEN_URI,
+        BATTLENET_CLIENT_ID,
+        BATTLENET_CLIENT_SECRET,
+    )
+    token["expires_at"] = convert_to_utc_seconds(token["expires_in"])
+
+    store_cc_access_token(collection_name=token["sub"], token=token)
 
     return token
 
 
-async def cc_is_access_token_expired(token: dict) -> bool:
-    return token["expires_in"] < datetime.now(timezone.utc).timestamp()
+async def is_access_token_expired(token: dict) -> bool:
+    return token["expires_at"] < datetime.now(timezone.utc).timestamp()
