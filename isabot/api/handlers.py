@@ -10,12 +10,12 @@ import isabot.battlenet.account as account
 import isabot.battlenet.guild as guild
 import isabot.battlenet.oauth as auth
 import isabot.battlenet.store as store
+import isabot.discord.commands as commands
 from env import DISCORD_APP_ID, DISCORD_TOKEN
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
 from isabot.battlenet.constants import GUILD_NAME, GUILD_REALM
 from isabot.discord import verify
-from isabot.discord.commands import register_slash_command
 from isabot.discord.discord_types import (
     APIInteractionResponseFlags,
     APIInteractionResponseType,
@@ -41,7 +41,12 @@ async def handle_register_cmd(login_url: str) -> JSONResponse:
 
 
 async def handle_setup() -> None:
-    await register_slash_command(BASE, DISCORD_TOKEN, DISCORD_APP_ID)
+    await commands.register_slash_command(BASE, DISCORD_TOKEN, DISCORD_APP_ID)
+
+    registered_commands = [BASE]
+    await commands.bulk_overwrite_commands(
+        DISCORD_APP_ID, DISCORD_TOKEN, registered_commands
+    )
 
     # Probably shouldn't use this function here if the app is being
     # deployed in a serverless environment

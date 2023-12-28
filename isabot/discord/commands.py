@@ -16,6 +16,7 @@ def get_bot_authorization_header(token: str) -> str:
 
 
 async def register_slash_command(data: dict, token: str, app_id: str) -> None:
+    """https://discord.com/developers/docs/interactions/application-commands#bulk-overwrite-global-application-commands"""
     async with ClientSession() as session:
         async with session.post(
             url=get_register_command_url(app_id),
@@ -31,3 +32,22 @@ async def register_slash_command(data: dict, token: str, app_id: str) -> None:
                     f"Failed to register command: {response.status} {await response.text()}"
                 )
             print("Registering slash command...", response.status)
+            return await response.json()
+
+
+async def bulk_overwrite_commands(app_id: str, token: str, commands: list[dict]):
+    """https://discord.com/developers/docs/interactions/application-commands#bulk-overwrite-global-application-commands"""
+    async with ClientSession() as session:
+        async with session.put(
+            url=get_register_command_url(app_id),
+            headers={
+                "Authorization": get_bot_authorization_header(token),
+                "Content-Type": "application/json",
+            },
+            json=commands,
+        ) as response:
+            if not response.ok:
+                raise Exception(
+                    f"Failed to bulk overwrite commands: {response.status} {await response.text()}"
+                )
+            print("Overwriting commands...")
