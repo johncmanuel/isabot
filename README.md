@@ -21,13 +21,28 @@ The purpose of Isabot is to promote friendly competition within the guild, recog
 
 ## Getting Started
 
+Install [Poetry, a tool for managing packages within a virtual environment.](https://python-poetry.org/)
+
 Install packages: `poetry install`
+
+Then, inject a plugin for Poetry called [Export](https://github.com/python-poetry/poetry-plugin-export). This plugin will help with exporting `poetry.lock` into other formats such as `requirements.txt`.
+
+Use the below command to convert `poetry.lock` to `requirements.txt`:
+
+```bash
+poetry export -f requirements.txt --output requirements.txt --without-hashes
+```
 
 Run the server with: `poetry run uvicorn main:app --reload`
 
-If you choose not to use build tools such as Poetry, perform the following operations:
+## Development
+
+Use [ngrok](https://ngrok.com/) to test features such as OAuth:
 
 ```bash
-pip install
-uvicorn main:app --reload
+# default port of app is 8000
+# do not include https://
+ngrok http --domain=<your assigned domain>.ngrok-free.app 8000
+# or (if not using a domain)
+ngrok http 8000
 ```
