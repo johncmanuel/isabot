@@ -1,6 +1,9 @@
 from isabot.firebase.crud import create_document, delete_document, read_document
 
-"""TODO: create functions for each crud operation that returns its name in DB (and data if applicable)"""
+"""
+TODO: refactor this file to create crud, wrapper functions for each collection. This would
+reduce code duplication
+"""
 
 
 def store_access_token(name: str, token: dict):
@@ -48,4 +51,18 @@ def store_cc_access_token(
     collection_path: str = "client_credentials_token",
 ):
     ref = create_document(collection_path, collection_name, token)
+    return ref
+
+
+def store_len_mounts(
+    collection_name: str, len_mounts: int, collection_path: str = "collection"
+):
+    ref = create_document(
+        collection_path, collection_name, {"number_of_mounts": len_mounts}
+    )
+    return ref
+
+
+def store_pvp_data(collection_name: str, pvp_data: dict, collection_path: str = "pvp"):
+    ref = create_document(collection_path, collection_name, pvp_data)
     return ref

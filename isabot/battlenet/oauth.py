@@ -11,6 +11,9 @@ from authlib.integrations.starlette_client import OAuth
 from fastapi import Request
 from starlette.datastructures import URL
 
+import isabot.battlenet.helpers as helpers
+import isabot.battlenet.store as store
+import isabot.firebase.crud as crud
 from env import BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET
 from isabot.battlenet.constants import (
     BATTLENET_OAUTH_AUTHORIZE_URI,
@@ -19,9 +22,6 @@ from isabot.battlenet.constants import (
     BATTLENET_OAUTH_URL,
     BATTLENET_URL,
 )
-from isabot.battlenet.helpers import convert_to_utc_seconds
-from isabot.battlenet.store import store_cc_access_token
-from isabot.firebase.crud import get_first_doc_in_collection
 
 oauth = OAuth()
 oauth.register(
@@ -68,7 +68,11 @@ async def cc_handler(url: str, client_id: str, client_secret: str):
 async def cc_get_access_token(
     collection_path: str = "client_credentials_token",
 ):
-    token = get_first_doc_in_collection(collection_path)
+    """
+    Retrieves client credentials access token from the DB if it's not expired yet or it exists. Else,
+    request a new one and store it in DB.
+    """
+    token = crud.get_first_doc_in_collection(collection_path)
 
     if token and not await is_access_token_expired(token):
         return token
@@ -78,9 +82,9 @@ async def cc_get_access_token(
         BATTLENET_CLIENT_ID,
         BATTLENET_CLIENT_SECRET,
     )
-    token["expires_at"] = convert_to_utc_seconds(token["expires_in"])
+    token["expires_at"] = helpers.convert_to_utc_seconds(token["expires_in"])
 
-    store_cc_access_token(collection_name=token["sub"], token=token)
+    store.store_cc_access_token(collection_name=token["sub"], token=token)
 
     return token
 

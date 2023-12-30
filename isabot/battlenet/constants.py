@@ -1,7 +1,10 @@
-# https://develop.battle.net/documentation/world-of-warcraft/guides/namespaces
 BATTLENET_REGION = "us"
 
 # Available options are: Static, Dynamic, and Profile
+# More information here:
+# https://develop.battle.net/documentation/world-of-warcraft/guides/namespaces
+#
+# Something to note: profile-related data are updated after a character logs out
 BATTLENET_NAMESPACES = {
     "static": f"static-{BATTLENET_REGION}",
     "dynamic": f"dynamic-{BATTLENET_REGION}",
