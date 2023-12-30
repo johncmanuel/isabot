@@ -1,3 +1,5 @@
+import typing
+
 BATTLENET_REGION = "us"
 
 # Available options are: Static, Dynamic, and Profile
@@ -30,3 +32,7 @@ BATTLENET_OAUTH_AUTHORIZE_URI = f"{BATTLENET_OAUTH_URL}/authorize"
 BATTLENET_OAUTH_TOKEN_URI = f"{BATTLENET_OAUTH_URL}/token"
 
 BATTLENET_OAUTH_NAME = "battlenet"
+
+PVP_BRACKETS = typing.Literal["2v2", "3v3", "rbg"]
+
+# PVP_BRACKETS: typing.Tuple[PVP_BRACKETS_TYPE, ...] = typing.get_args(PVP_BRACKETS_TYPE)

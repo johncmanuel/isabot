@@ -2,6 +2,7 @@
 
 
 import traceback
+from typing import get_args
 
 from authlib.integrations.starlette_client import OAuthError
 from fastapi import Request, Response
@@ -16,7 +17,7 @@ import isabot.battlenet.store as store
 import isabot.discord.commands as commands
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
-from isabot.battlenet.constants import GUILD_NAME, GUILD_REALM
+from isabot.battlenet.constants import GUILD_NAME, GUILD_REALM, PVP_BRACKETS
 from isabot.discord import verify
 from isabot.discord.discord_types import (
     APIInteractionResponseFlags,
@@ -46,9 +47,9 @@ async def handle_setup() -> None:
     # TODO: Register commands only if new commands were added or current commands
     # were updated
 
-    # existing_commands = await commands.get_existing_commands()
+    existing_commands = await commands.get_existing_commands()
     # registered_commands = [BASE]
-    # await commands.register_slash_command(BASE)
+    await commands.register_slash_command(BASE)
 
     # print(existing_commands)
     # await commands.bulk_overwrite_commands(
@@ -172,13 +173,17 @@ async def handle_bnet_wow_data(
         wow_chars_in_guild = get_characters_in_guild(wow_chars, guild_members)
 
         # Get mounts and PvP data
-        pvp_data = await get_pvp_data_from_chars(
+        bg_wins = await get_normal_bg_data_from_chars(
             wow_chars_in_guild, cc_access_token, user_id
         )
         account_mounts = await account.account_mounts_collection(af_access_token)
         len_mounts = len(account_mounts["mounts"])
 
-        # return _JSONResponse(pvp_data)
+        p = await pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id)
+
+        pvp_data = {"pvp_brackets": p, "bg_wins": bg_wins}
+
+        # return _JSONResponse(p)
 
         # Store all data in DB
         store.store_bnet_userinfo(userinfo)
@@ -219,11 +224,11 @@ def get_characters_in_guild(
     ]
 
 
-async def get_pvp_data_from_chars(
+async def get_normal_bg_data_from_chars(
     wow_chars_in_guild: list[dict], cc_access_token: str, user_id: str
 ) -> dict[str, int]:
     """Get total wins and loses from each character's battleground statistics"""
-    account_pvp_data = {"user_id": user_id, "total_won": 0, "total_lost": 0}
+    account_pvp_stats = {"user_id": user_id, "bg_total_won": 0, "bg_total_lost": 0}
     for char in wow_chars_in_guild:
         char_pvp_stats = {"char_total_won": 0, "char_total_lost": 0}
         char_pvp_data = await pvp.get_pvp_summary(
@@ -236,6 +241,26 @@ async def get_pvp_data_from_chars(
             won, lost = match_stats.get("won"), match_stats.get("lost")
             char_pvp_stats["char_total_won"] += won
             char_pvp_stats["char_total_lost"] += lost
-        account_pvp_data["total_won"] += char_pvp_stats.get("char_total_won", 0)
-        account_pvp_data["total_lost"] += char_pvp_stats.get("char_total_lost", 0)
-    return account_pvp_data
+        account_pvp_stats["bg_total_won"] += char_pvp_stats.get("char_total_won", 0)
+        account_pvp_stats["bg_total_lost"] += char_pvp_stats.get("char_total_lost", 0)
+    return account_pvp_stats
+
+
+async def pvp_bracket_data(
+    wow_chars_in_guild: list[dict],
+    cc_access_token: str,
+    # pvp_bracket: PVP_BRACKETS,
+    user_id: str,
+) -> list[dict]:
+    pp = []
+    for char in wow_chars_in_guild:
+        pvp_brackets = get_args(PVP_BRACKETS)
+        for bracket in pvp_brackets:
+            p = await pvp.get_pvp_bracket(
+                char["name"], cc_access_token, bracket, char["realm"]["slug"]
+            )
+            if not p:
+                continue
+            pp.append(p)
+    # return {"bracket_data": pp}
+    return pp
