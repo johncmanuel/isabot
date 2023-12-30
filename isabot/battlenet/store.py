@@ -1,5 +1,7 @@
 from isabot.firebase.crud import create_document, delete_document, read_document
 
+"""TODO: create functions for each crud operation that returns its name in DB (and data if applicable)"""
+
 
 def store_access_token(name: str, token: dict):
     access_token_doc_ref = create_document(
