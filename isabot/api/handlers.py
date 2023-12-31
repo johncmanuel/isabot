@@ -19,7 +19,7 @@ import isabot.battlenet.store as store
 import isabot.discord.commands as commands
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
-from isabot.battlenet.constants import GUILD_NAME, GUILD_REALM, PVP_BRACKETS
+from isabot.battlenet.constants import PVP_BRACKETS
 from isabot.discord import verify
 from isabot.discord.discord_types import (
     APIInteractionResponseFlags,
@@ -159,8 +159,9 @@ async def handle_bnet_wow_data(
 
         user_id = userinfo["sub"]
 
-        g = await guild.get_guild_roster(cc_access_token)
-        guild_members = g["members"]
+        guild_members = (await guild.get_guild_roster(cc_access_token)).get(
+            "members", []
+        )
 
         # Request the information first before storing them in the DB
         profile_summary = await account.account_profile_summary(af_access_token)
