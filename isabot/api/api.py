@@ -49,6 +49,6 @@ async def auth(request: Request):
     return await handlers.handle_auth(request)
 
 
-@router.get("/test")
-async def test(request: Request):
-    return {"message": "success"}
+@router.get("/health")
+async def test():
+    return {"hi": "welcome"}
