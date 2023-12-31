@@ -1,7 +1,9 @@
 # pyright: reportOptionalMemberAccess=false
 
 
+import asyncio
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from typing import get_args
 
 from authlib.integrations.starlette_client import OAuthError
@@ -47,7 +49,7 @@ async def handle_setup() -> None:
     # TODO: Register commands only if new commands were added or current commands
     # were updated
 
-    existing_commands = await commands.get_existing_commands()
+    # existing_commands = await commands.get_existing_commands()
     # registered_commands = [BASE]
     await commands.register_slash_command(BASE)
 
@@ -157,9 +159,7 @@ async def handle_bnet_wow_data(
 
         user_id = userinfo["sub"]
 
-        g = await guild.get_guild_roster(
-            cc_access_token, GUILD_NAME, GUILD_REALM[0], "profile"
-        )
+        g = await guild.get_guild_roster(cc_access_token)
         guild_members = g["members"]
 
         # Request the information first before storing them in the DB
@@ -173,24 +173,28 @@ async def handle_bnet_wow_data(
         wow_chars_in_guild = get_characters_in_guild(wow_chars, guild_members)
 
         # Get mounts and PvP data
-        bg_wins = await get_normal_bg_data_from_chars(
-            wow_chars_in_guild, cc_access_token, user_id
+        bg_wins, account_mounts, p = await asyncio.gather(
+            get_normal_bg_data_from_chars(wow_chars_in_guild, cc_access_token, user_id),
+            account.account_mounts_collection(af_access_token),
+            pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id),
         )
-        account_mounts = await account.account_mounts_collection(af_access_token)
+
         len_mounts = len(account_mounts["mounts"])
-
-        p = await pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id)
-
         pvp_data = {"pvp_brackets": p, "bg_wins": bg_wins}
 
-        # return _JSONResponse(p)
-
         # Store all data in DB
-        store.store_bnet_userinfo(userinfo)
-        store.store_access_token("authorization_flow_tokens", af_token)
-        store.store_wow_accounts(user_id, {"characters": wow_chars_in_guild})
-        store.store_len_mounts(user_id, len_mounts)
-        store.store_pvp_data(user_id, pvp_data)
+        batch_parallel_write(
+            [
+                lambda: store.store_bnet_userinfo(userinfo),
+                lambda: store.store_access_token("authorization_flow_tokens", af_token),
+                lambda: store.store_wow_accounts(
+                    user_id, {"characters": wow_chars_in_guild}
+                ),
+                lambda: store.store_len_mounts(user_id, len_mounts),
+                lambda: store.store_pvp_data(user_id, pvp_data),
+            ]
+        )
+
     except Exception as error:
         print("error", error)
         print(traceback.format_exc())
@@ -222,6 +226,18 @@ def get_characters_in_guild(
     return [
         c for c in characters for g in guild_roster if c["id"] == g["character"]["id"]
     ]
+
+
+def batch_parallel_write(tasks: list):
+    """
+    Reference used:
+    https://stackoverflow.com/a/56138825
+    https://stackoverflow.com/a/58897275
+    """
+    with ThreadPoolExecutor() as executor:
+        running_tasks = [executor.submit(task) for task in tasks]
+        for running_task in running_tasks:
+            running_task.result()
 
 
 async def get_normal_bg_data_from_chars(
