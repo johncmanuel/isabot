@@ -6,6 +6,7 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import get_args
 
+from aiohttp import ClientSession
 from authlib.integrations.starlette_client import OAuthError
 from fastapi import Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -215,6 +216,34 @@ async def handle_logout(request: Request):
     if not popped_user:
         return Response("You're not logged in, get outta here!")
     return Response("Successfully logged out!")
+
+
+async def handle_update_leaderboard(request: Request):
+    """https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
+
+    Will be testing Google Cloud services
+    """
+    try:
+        id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
+    except Exception:
+        return Response("Invalid request", 400)
+
+    decoded = await decode_id_token(id_token)
+    if not decoded:
+        return Response("Invalid request", 400)
+
+    print(decoded)
+    return Response("Successfully updated leaderboard!")
+
+
+async def decode_id_token(id_token: str):
+    async with ClientSession() as session:
+        async with session.get(
+            url=f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+        ) as response:
+            if not response.ok:
+                return None
+            return await response.json()
 
 
 def get_discord_invite_url(app_id: str) -> str:

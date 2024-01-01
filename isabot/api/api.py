@@ -1,6 +1,6 @@
 # pyright: reportOptionalMemberAccess=false
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 
 import isabot.api.handlers as handlers
@@ -52,3 +52,9 @@ async def auth(request: Request):
 @router.get("/health")
 async def test():
     return {"hi": "welcome"}
+
+
+@router.get("/update")
+async def update_leaderboard(request: Request):
+    """https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler"""
+    return await handlers.handle_update_leaderboard(request)
