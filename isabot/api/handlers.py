@@ -52,7 +52,7 @@ async def handle_setup() -> None:
 
     # existing_commands = await commands.get_existing_commands()
     # registered_commands = [BASE]
-    await commands.register_slash_command(BASE)
+    # await commands.register_slash_command(BASE)
 
     # print(existing_commands)
     # await commands.bulk_overwrite_commands(
