@@ -51,6 +51,7 @@ async def auth(request: Request):
 
 @router.get("/health")
 async def test():
+    """https://byjos.dev/cloud-run-hot-service/"""
     return {"hi": "welcome"}
 
 
