@@ -1,4 +1,8 @@
 # https://fastapi.tiangolo.com/deployment/docker/#dockerfile
+# 
+# Probably won't need to add Poetry to the image, but there is a guide
+# for it here: 
+# https://fastapi.tiangolo.com/deployment/docker/#docker-image-with-poetry
 
 FROM python:3.9-slim
 
