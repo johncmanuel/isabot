@@ -232,7 +232,6 @@ async def handle_update_leaderboard(request: Request):
     if not decoded:
         return Response("Invalid request", 400)
 
-    print(decoded)
     return Response("Successfully updated leaderboard!")
 
 
