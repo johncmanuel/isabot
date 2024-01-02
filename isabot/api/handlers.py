@@ -4,6 +4,7 @@
 import asyncio
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from typing import get_args
 
 from aiohttp import ClientSession
@@ -18,6 +19,7 @@ import isabot.battlenet.oauth as auth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
 import isabot.discord.commands as commands
+from env import GOOGLE_SERVICE_ACCOUNT
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
 from isabot.battlenet.constants import PVP_BRACKETS
@@ -232,6 +234,9 @@ async def handle_update_leaderboard(request: Request):
     if not decoded:
         return Response("Invalid request", 400)
 
+    if not is_valid_token(decoded):
+        return Response("Invalid request", 400)
+
     return Response("Successfully updated leaderboard!")
 
 
@@ -243,6 +248,20 @@ async def decode_id_token(id_token: str):
             if not response.ok:
                 return None
             return await response.json()
+
+
+def is_valid_token(token: dict, expected_email: str = GOOGLE_SERVICE_ACCOUNT):
+    expired = token.get("exp")
+    email = token.get("email")
+    if not expired:
+        return False
+    if int(expired) < datetime.now(timezone.utc).timestamp():
+        return False
+    if not email:
+        return False
+    if expected_email != email:
+        return False
+    return True
 
 
 def get_discord_invite_url(app_id: str) -> str:
