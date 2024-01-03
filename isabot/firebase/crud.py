@@ -1,3 +1,5 @@
+from typing import Optional
+
 from google.cloud.firestore import DocumentReference
 
 from isabot.firebase.setup import db
@@ -10,7 +12,9 @@ def collection_ref(collection_path: str):
     return db.collection(collection_path)
 
 
-def document_ref(collection_path: str, document_id: str):
+def document_ref(collection_path: str, document_id: Optional[str]):
+    if not document_id:
+        return collection_ref(collection_path).document()
     return collection_ref(collection_path).document(document_id)
 
 
@@ -28,7 +32,7 @@ def is_document_exists(doc_ref: DocumentReference):
     return doc_ref.get().exists
 
 
-def create_document(collection_path: str, document_id: str, data: dict):
+def create_document(collection_path: str, document_id: Optional[str], data: dict):
     doc_ref = document_ref(collection_path, document_id)
     doc_ref.set(data)
     return doc_ref

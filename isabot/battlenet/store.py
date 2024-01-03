@@ -1,6 +1,11 @@
+from typing import Optional
+
 from isabot.firebase.crud import create_document, delete_document, read_document
 
 """
+Interface library with firestore module. Helps with interacting with the Firestore DB 
+without knowing the firebase_admin library.  
+
 TODO: refactor this file to create crud, wrapper functions for each collection. This would
 reduce code duplication
 """
@@ -66,3 +71,18 @@ def store_len_mounts(
 def store_pvp_data(collection_name: str, pvp_data: dict, collection_path: str = "pvp"):
     ref = create_document(collection_path, collection_name, pvp_data)
     return ref
+
+
+def get_data(collection_name: str, collection_path: str):
+    d = read_document(collection_path, collection_name)
+    return d
+
+
+def store_data(
+    data: dict,
+    collection_name: Optional[str],
+    collection_path: str,
+):
+    """TODO: Use this to replace store_* functions"""
+    d = create_document(collection_path, collection_name, data)
+    return d
