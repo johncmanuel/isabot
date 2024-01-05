@@ -1,10 +1,14 @@
-def safe_nested_get(dct: dict, *keys):
+def safe_nested_get(
+    dct: dict,
+    *keys,
+    default=None,
+):
     """https://stackoverflow.com/a/25833661"""
     for key in keys:
         try:
             dct = dct[key]
         except KeyError:
-            return None
+            return default
         except Exception:
-            return None
+            return default
     return dct

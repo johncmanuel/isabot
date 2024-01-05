@@ -1,5 +1,6 @@
 from typing import Optional
 
+import isabot.utils.dictionary as dictionary
 from isabot.battlenet.constants import BATTLENET_OAUTH_URL, GUILD_REALM
 from isabot.battlenet.helpers import get_bnet_endpt
 
@@ -38,30 +39,31 @@ async def account_mounts_collection(token: str, namespace: str = "profile"):
     )
 
 
-async def account_characters(
-    wow_accounts: list[dict], characters_in_guild: bool = False
-) -> list[dict]:
+async def account_characters(wow_accounts: list[dict]) -> dict:
     """
     Retrieves characters for each WoW account that're located in Shandris or Bronzebeard.
 
     `wow_accounts` must be a list of dictionaries, where each dict contains information about
     a WoW character
     """
-    accounts = []
+    accounts = {}
     for account in wow_accounts:
         acc_characters = account["characters"]
         for character in acc_characters:
-            # Profile summary (from wow_accounts) doesn't reveal a character's guild,
-            # so add the character if they're in the same realm as the guild.
-            if characters_in_guild and character["realm"]["slug"] in GUILD_REALM:
-                tmp = {}
-                tmp["name"] = character["name"]
-                tmp["id"] = character["id"]
-                tmp["protected_character"] = character["protected_character"]
-                tmp["class"] = character["playable_class"]
-                tmp["race"] = character["playable_race"]
-                tmp["faction"] = character["faction"]["name"]
-                tmp["level"] = character["level"]
-                tmp["realm"] = character["realm"]
-                accounts.append(tmp)
+            char_id = character.get("id")
+
+            # Needs a valid character ID in order to proceed
+            if not char_id:
+                continue
+
+            accounts[str(char_id)] = {
+                "name": character.get("name"),
+                "id": char_id,
+                "protected_character": character.get("protected_character"),
+                "playable_class": character.get("playable_class"),
+                "playable_race": character.get("playable_race"),
+                "faction": dictionary.safe_nested_get(character, "faction", "name"),
+                "level": character.get("level"),
+                "realm": character.get("realm"),
+            }
     return accounts

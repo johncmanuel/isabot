@@ -43,7 +43,7 @@ def store_bnet_userinfo(userinfo: dict, collection_name: str = "users"):
     return userinfo_doc_ref
 
 
-def store_wow_accounts(
+def store_wow_chars(
     collection_name: str, wow_accounts: dict, collection_path: str = "characters"
 ):
     ref = crud.create_document(collection_path, collection_name, wow_accounts)
