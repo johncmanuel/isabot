@@ -56,14 +56,29 @@ async def account_characters(wow_accounts: list[dict]) -> dict:
             if not char_id:
                 continue
 
+            # Clean data
+            playable_class = character.get("playable_class")
+            if playable_class:
+                playable_class.pop("key", None)
+
+            playable_race = character.get("playable_race")
+            if playable_race:
+                playable_race.pop("key", None)
+
+            realm = character.get("realm")
+            if realm:
+                realm.pop("key", None)
+
             accounts[str(char_id)] = {
                 "name": character.get("name"),
                 "id": char_id,
-                "protected_character": character.get("protected_character"),
-                "playable_class": character.get("playable_class"),
-                "playable_race": character.get("playable_race"),
+                "protected_character": dictionary.safe_nested_get(
+                    character, "protected_character", "href"
+                ),
+                "playable_class": playable_class,
+                "playable_race": playable_race,
                 "faction": dictionary.safe_nested_get(character, "faction", "name"),
                 "level": character.get("level"),
-                "realm": character.get("realm"),
+                "realm": realm,
             }
     return accounts

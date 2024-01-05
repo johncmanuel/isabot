@@ -17,7 +17,8 @@ import isabot.battlenet.oauth as auth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
 import isabot.discord.commands as commands
-import isabot.utils.concurrency as concurrency
+
+# import isabot.utils.concurrency as concurrency
 import isabot.utils.dictionary as dictionary
 from env import GOOGLE_SERVICE_ACCOUNT
 from isabot.api.discord import register
@@ -197,15 +198,22 @@ async def handle_bnet_wow_data(
         len_mounts = len(account_mounts.get("mounts", []))
 
         # Store all data in DB
-        concurrency.batch_parallel_run(
-            [
-                lambda: store.store_bnet_userinfo(userinfo),
-                lambda: store.store_access_token("authorization_flow_tokens", af_token),
-                lambda: store.store_wow_chars(user_id, wow_chars),
-                lambda: store.store_len_mounts(user_id, len_mounts),
-                lambda: store.store_pvp_data(user_id, normal_bg_data),
-            ]
+        await asyncio.gather(
+            store.store_bnet_userinfo(userinfo),
+            store.store_access_token("authorization_flow_tokens", af_token),
+            store.store_wow_chars(user_id, wow_chars),
+            store.store_len_mounts(user_id, len_mounts),
+            store.store_pvp_data(user_id, normal_bg_data),
         )
+        # concurrency.batch_parallel_run(
+        #     [
+        #         lambda: store.store_bnet_userinfo(userinfo),
+        #         lambda: store.store_access_token("authorization_flow_tokens", af_token),
+        #         lambda: store.store_wow_chars(user_id, wow_chars),
+        #         lambda: store.store_len_mounts(user_id, len_mounts),
+        #         lambda: store.store_pvp_data(user_id, normal_bg_data),
+        #     ]
+        # )
 
     except Exception as error:
         print("error", error)

@@ -72,7 +72,7 @@ async def cc_get_access_token(
     Retrieves client credentials access token from the DB if it's not expired yet or it exists. Else,
     request a new one and store it in DB.
     """
-    token = crud.get_first_doc_in_collection(collection_path)
+    token = await crud.get_first_doc_in_collection(collection_path)
 
     if token and not await is_access_token_expired(token):
         return token
@@ -84,7 +84,7 @@ async def cc_get_access_token(
     )
     token["expires_at"] = helpers.convert_to_utc_seconds(token["expires_in"])
 
-    store.store_cc_access_token(collection_name=token["sub"], token=token)
+    await store.store_cc_access_token(collection_name=token["sub"], token=token)
 
     return token
 

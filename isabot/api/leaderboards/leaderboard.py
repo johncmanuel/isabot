@@ -42,29 +42,31 @@ from pydantic import BaseModel
 import isabot.battlenet.characters as characters
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
+import isabot.firebase.crud as crud  # TODO: Remove crud import and use any functionality inside store
 import isabot.utils.dictionary as dictionary
+from isabot.battlenet.constants import GUILD_REALM
 
 
 class Entry(BaseModel):
     """
-    Weekly leaderboard entry data scheme
-    1. entry_id (using firestore's autogen ids)
-    2. players (using battletags)
-    3. date_created (UTC epoch)
-    4. mounts (unordered)
-    5. normal_bg_wins (unordered)
-    6. arena_wins (TBA)
+        Weekly leaderboard entry data scheme
+        1. entry_id (using firestore's autogen ids)
+        2. players (using battletags)
+        3. date_created (UTC epoch)
+        4. mounts (unordered)
+        5. normal_bg_wins (unordered)
+        6. arena_wins (TBA)
+    55
+        Example data on Firestore:
 
-    Example data on Firestore:
-
-    Collection       Document               ABCD1234
-    leaderboard      "ABCD1234" ->  See Fields (or keys) below
-                                    "entry_id": "ABCD1234"
-                                    "players": {"123456": {"battletag": "ABCD#9876", id: "123456"}}, ...}
-                                    "date_added": 38873943453.28472
-                                    "mounts": {"123456": {"len_mounts": 170}}, ...
-                                    "normal_bg_wins": {"123456": {"bg_wins": 420}, ...}
-                                    ...
+        Collection       Document               ABCD1234
+        leaderboard      "ABCD1234" ->  See Fields (or keys) below
+                                        "entry_id": "ABCD1234"
+                                        "players": {"123456": {"battletag": "ABCD#9876", id: "123456"}}, ...}
+                                        "date_added": 38873943453.28472
+                                        "mounts": {"123456": {"len_mounts": 170}}, ...
+                                        "normal_bg_wins": {"123456": {"bg_wins": 420}, ...}
+                                        ...
     """
 
     entry_id: Optional[str] = None
@@ -94,12 +96,34 @@ class Leaderboard:
             normal_bg_wins=normal_bg_wins,
         )
 
-    def upload_entry(self, data: Entry):
-        store.store_data(data.model_dump(), collection_path=self.db_collection_path)
+    async def get_players_in_guild(self) -> dict[str, dict]:
+        """Get players that're only in the guild for each account"""
+        players = {}
+
+        # Query characters in same realm
+        # q = crud.query("characters", "realm.slug", "in", list(GUILD_REALM))
+        p = store.get_multiple_data("characters")
+        print(p)
+        # Filter results by cross-referencing current guild roster
+
+        return players
+
+    async def get_mounts(self):
+        """Get mounts from each account"""
+        pass
+
+    async def get_normal_bg_wins(self):
+        """Get normal battleground wins for each account"""
+        pass
+
+    async def upload_entry(self, data: Entry):
+        await store.store_data(
+            data.model_dump(), collection_path=self.db_collection_path
+        )
 
     async def update_db(self):
         """Updates current DB with new relevant data from a user's character list"""
-        chars = store.get_multiple_data("characters")
+        chars = await store.get_multiple_data("characters")
 
         # Get pvp and mounts data from each char in an account and update the DB with it
         for account_id in chars:
@@ -113,7 +137,7 @@ class Leaderboard:
                 # char_id = char["id"]
 
                 char_mounts, char_pvp_sum = await asyncio.gather(
-                    characters.character_mounts(self.cc_access_token, name, realm),
+                    characters.character_mounts(self.cc_access_token, name, realm),  # type: ignore
                     pvp.get_pvp_summary(name, self.cc_access_token, realm),
                 )  # type: ignore
 
@@ -137,15 +161,17 @@ class Leaderboard:
                 account_pvp_lost += char_pvp_lost
 
             # TODO: implement a naming system for collection paths on Firestore
-            store.store_pvp_data(
-                account_id,
-                {
-                    "bg_total_lost": account_pvp_lost,
-                    "bg_total_won": account_pvp_wins,
-                    "user_id": account_id,
-                },
+            await asyncio.gather(
+                store.store_pvp_data(
+                    account_id,
+                    {
+                        "bg_total_lost": account_pvp_lost,
+                        "bg_total_won": account_pvp_wins,
+                        "user_id": account_id,
+                    },
+                ),
+                store.store_len_mounts(account_id, account_len_mounts),
             )
-            store.store_len_mounts(account_id, account_len_mounts)
 
     def get_bg_statistics(self, pvp_map_statistics: list[dict]):
         char_total_won = 0
