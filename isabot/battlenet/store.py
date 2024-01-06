@@ -39,9 +39,8 @@ async def delete_access_token(
 
 
 async def store_bnet_userinfo(userinfo: dict, collection_name: str = "users"):
-    userinfo_doc_ref = await crud.create_document(
-        collection_name, userinfo.get("sub", "None"), userinfo
-    )
+    sub = userinfo.pop("sub", "None")
+    userinfo_doc_ref = await crud.create_document(collection_name, sub, userinfo)
     return userinfo_doc_ref
 
 
@@ -98,10 +97,14 @@ async def get_multiple_data(collection_path: str):
 async def store_data(
     data: dict,
     collection_path: str,
+    include_autogen_id_field: bool = False,
     collection_name: Optional[str] = None,
 ):
     """TODO: Use this to replace store_* functions"""
     d = await crud.create_document(
-        collection_path=collection_path, document_id=collection_name, data=data
+        collection_path=collection_path,
+        document_id=collection_name,
+        data=data,
+        include_autogen_id_field=include_autogen_id_field,
     )
     return d
