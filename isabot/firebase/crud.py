@@ -32,8 +32,15 @@ def is_document_exists(doc_ref: DocumentReference):
     return doc_ref.get().exists
 
 
-async def create_document(collection_path: str, document_id: Optional[str], data: dict):
+async def create_document(
+    collection_path: str,
+    document_id: Optional[str],
+    data: dict,
+    include_autogen_id_field: bool = False,
+):
     doc_ref = document_ref(collection_path, document_id)
+    if include_autogen_id_field:
+        data["id"] = doc_ref.id
     await doc_ref.set(data)
     return doc_ref
 
