@@ -11,6 +11,7 @@ from fastapi import BackgroundTasks, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
+import isabot.api.leaderboards.update as update
 import isabot.battlenet.account as account
 import isabot.battlenet.guild as guild
 import isabot.battlenet.oauth as auth
@@ -133,8 +134,6 @@ async def handle_auth(request: Request) -> Response:
     if not userinfo:
         return Response("Internal server error", 500)
 
-    request.session["user"] = dict(userinfo)
-
     return await handle_bnet_wow_data(request, af_token=token, userinfo=userinfo)
 
 
@@ -182,7 +181,7 @@ async def handle_bnet_wow_data(
             if dictionary.safe_nested_get(v, "realm", "slug", default="N/A")
             in GUILD_REALM
         }
-        wow_chars_in_guild = get_characters_in_guild(
+        wow_chars_in_guild = guild.get_characters_in_guild(
             wow_chars_in_guild_realm, guild_members
         )
 
@@ -205,15 +204,8 @@ async def handle_bnet_wow_data(
             store.store_len_mounts(user_id, len_mounts),
             store.store_pvp_data(user_id, normal_bg_data),
         )
-        # concurrency.batch_parallel_run(
-        #     [
-        #         lambda: store.store_bnet_userinfo(userinfo),
-        #         lambda: store.store_access_token("authorization_flow_tokens", af_token),
-        #         lambda: store.store_wow_chars(user_id, wow_chars),
-        #         lambda: store.store_len_mounts(user_id, len_mounts),
-        #         lambda: store.store_pvp_data(user_id, normal_bg_data),
-        #     ]
-        # )
+
+        request.session["user"] = dict(userinfo)
 
     except Exception as error:
         print("error", error)
@@ -255,8 +247,7 @@ async def handle_update_leaderboard(
     if not is_valid_token(decoded):
         return Response("Invalid request", 400)
 
-    # Update and send leaderboard data to Discord
-    # background_tasks.add_task()
+    background_tasks.add_task(update.update_db)
 
     return Response("Updating leaderboard now...", 202)
 
@@ -287,17 +278,3 @@ def is_valid_token(token: dict, expected_email: str = GOOGLE_SERVICE_ACCOUNT):
 
 def get_discord_invite_url(app_id: str) -> str:
     return f"https://discord.com/api/oauth2/authorize?client_id={app_id}&scope=applications.commands"
-
-
-def get_characters_in_guild(characters: dict, guild_roster: list[dict]):
-    return {
-        k: v
-        for k, v in characters.items()
-        if k
-        in map(
-            lambda x: str(
-                dictionary.safe_nested_get(x, "character", "id", default="N/A")
-            ),
-            guild_roster,
-        )
-    }

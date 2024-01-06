@@ -40,6 +40,7 @@ async def delete_access_token(
 
 async def store_bnet_userinfo(userinfo: dict, collection_name: str = "users"):
     sub = userinfo.pop("sub", "None")
+    userinfo["id"] = str(userinfo["id"])
     userinfo_doc_ref = await crud.create_document(collection_name, sub, userinfo)
     return userinfo_doc_ref
 
