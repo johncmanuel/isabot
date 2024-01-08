@@ -17,9 +17,12 @@ async def get_guild_roster(
     realm: str = GUILD_REALM[0],
     namespace: str = "profile",
 ):
-    return await get_bnet_endpt(
-        f"/data/wow/guild/{realm}/{guild}/roster", token, namespace
-    )
+    try:
+        return await get_bnet_endpt(
+            f"/data/wow/guild/{realm}/{guild}/roster", token, namespace
+        )
+    except Exception:
+        return None
 
 
 def get_characters_in_guild(characters: dict, guild_roster: list[dict]):

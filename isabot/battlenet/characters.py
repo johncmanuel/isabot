@@ -6,7 +6,7 @@ async def character_mounts(
 ):
     try:
         return await get_bnet_endpt(
-            f"/profile/wow/character/{realm_slug}/{character_name}/collections/mounts",
+            f"/profile/wow/character/{realm_slug}/{character_name.lower()}/collections/mounts",
             token,
             namespace,
         )
