@@ -68,9 +68,9 @@ async def get_bnet_endpt(
             },
         ) as response:
             if not response.ok:
-                raise Exception(
-                    f"Failed to fetch endpoint: {url} | {await response.text()}"
-                )
+                m = f"Failed to fetch endpoint: {url} | {response.status} | {await response.text()}"
+                print(m)
+                raise Exception(m)
             return await response.json()
 
 
