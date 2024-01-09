@@ -87,6 +87,7 @@ class Leaderboard:
         mounts: dict[str, dict],
         normal_bg_wins: dict[str, dict],
     ):
+        # TODO: Store acccount's characters that're in guild in a separate collection
         return Entry(
             players=players_characters,
             date_created=time(),
@@ -98,7 +99,6 @@ class Leaderboard:
     #     """Get players that're only in the guild for each account"""
     #     players = {}
 
-    #     # TODO: Store acccount's characters that're in guild in a separate collection
     #     guild_roster = (await guild.get_guild_roster(self.cc_access_token)).get(
     #         "members", []
     #     )

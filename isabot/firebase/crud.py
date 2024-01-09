@@ -18,16 +18,6 @@ def document_ref(collection_path: str, document_id: Optional[str]):
     return collection_ref(collection_path).document(document_id)
 
 
-async def get_first_doc_in_collection(collection_path: str):
-    ref = collection_ref(collection_path)
-
-    # Only query one document from collection
-    query = ref.limit(1)
-
-    async for doc in query.stream():
-        return doc.to_dict()
-
-
 def is_document_exists(doc_ref: DocumentReference):
     return doc_ref.get().exists
 

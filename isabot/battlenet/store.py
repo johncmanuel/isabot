@@ -8,6 +8,8 @@ without knowing the firebase_admin library.
 
 TODO: refactor this file to create crud, wrapper functions for each collection. This would
 reduce code duplication
+
+TODO: move this module somewhere else that's not in the battlenet module
 """
 
 
@@ -41,6 +43,8 @@ async def delete_access_token(
 async def store_bnet_userinfo(userinfo: dict, collection_name: str = "users"):
     sub = userinfo.pop("sub", "None")
     userinfo["id"] = str(userinfo["id"])
+    # Strip the unique identifier from the battletag for privacy
+    userinfo["battletag"] = userinfo["battletag"].split("#")[0]
     userinfo_doc_ref = await crud.create_document(collection_name, sub, userinfo)
     return userinfo_doc_ref
 
@@ -93,6 +97,29 @@ async def get_multiple_data(collection_path: str):
         doc_id = s.id
         l[doc_id] = d
     return l
+
+
+async def get_most_recent_doc(collection_path: str, field_path: str, order_type: str):
+    # firestore.AsyncQuery.DESCENDING or firestore.AsyncQuery.ASCENDING
+    # for order type
+    q = (
+        crud.collection_ref(collection_path)
+        .order_by(field_path, direction=order_type)
+        .limit(1)
+    )
+    async for d in q.stream():
+        return d.to_dict()
+
+
+async def get_first_doc_in_collection(collection_path: str):
+    """Mainly used for fetching tokens from DB"""
+    ref = crud.collection_ref(collection_path)
+
+    # Only query one document from collection
+    q = ref.limit(1)
+
+    async for doc in q.stream():
+        return doc.to_dict()
 
 
 async def store_data(

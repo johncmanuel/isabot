@@ -3,6 +3,7 @@
 # It's probably best to turn off type checkers to avoid errors
 # pyright: reportOptionalMemberAccess=false
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Union
 
@@ -13,7 +14,6 @@ from starlette.datastructures import URL
 
 import isabot.battlenet.helpers as helpers
 import isabot.battlenet.store as store
-import isabot.firebase.crud as crud
 from env import BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET
 from isabot.battlenet.constants import (
     BATTLENET_OAUTH_AUTHORIZE_URI,
@@ -70,18 +70,29 @@ async def cc_get_access_token(
 ):
     """
     Retrieves client credentials access token from the DB if it's not expired yet or it exists. Else,
-    request a new one and store it in DB.
+    request a new one and store it in DB. If the request(s) to retrieve a new token fails, raise an Exception.
     """
-    token = await crud.get_first_doc_in_collection(collection_path)
+    token = await store.get_first_doc_in_collection(collection_path)
 
-    if token and not await is_access_token_expired(token):
+    if token and not is_access_token_expired(token):
         return token
 
-    token = await cc_handler(
-        BATTLENET_OAUTH_TOKEN_URI,
-        BATTLENET_CLIENT_ID,
-        BATTLENET_CLIENT_SECRET,
-    )
+    max_retries = 2
+    num_retries = 0
+    while not token and max_retries > num_retries:
+        try:
+            token = await cc_handler(
+                BATTLENET_OAUTH_TOKEN_URI,
+                BATTLENET_CLIENT_ID,
+                BATTLENET_CLIENT_SECRET,
+            )
+        except Exception:
+            num_retries += 1
+            await asyncio.sleep(1)
+
+    if not token:
+        raise Exception("client_credentials token not retrieved")
+
     token["expires_at"] = helpers.convert_to_utc_seconds(token["expires_in"])
 
     await store.store_cc_access_token(collection_name=token["sub"], token=token)
@@ -89,5 +100,5 @@ async def cc_get_access_token(
     return token
 
 
-async def is_access_token_expired(token: dict) -> bool:
+def is_access_token_expired(token: dict) -> bool:
     return token["expires_at"] < datetime.now(timezone.utc).timestamp()

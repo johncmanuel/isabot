@@ -1,17 +1,21 @@
 import asyncio
 
 import isabot.battlenet.characters as characters
-import isabot.battlenet.oauth as oauth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
 import isabot.utils.dictionary as dictionary
 
 
-async def update_db():
-    """Updates current DB with new relevant data from a user's character list. This should also
-    overwrite any existing data."""
+async def update_db(cc_access_token: str):
+    """
+    Updates current DB with new relevant data from a user's character list. This should also
+    overwrite any existing data.
+    TODO: Refactor the code by creating reusable functions for processing data
+    (i.e pvp, mounts, etc).
+    TODO: Make API requests in batches to prevent avoid passing rate limit per second:
+    (see the section, "Throttling" at https://develop.battle.net/documentation/guides/getting-started)
+    """
     chars = await store.get_multiple_data("characters")
-    cc_access_token = (await oauth.cc_get_access_token())["access_token"]
 
     # Get pvp and mounts data from each char in an account and update the DB with it
     for account_id in chars:
@@ -21,13 +25,16 @@ async def update_db():
         mounts_seen = set()
         for char_id in chars[account_id]:
             char = chars[account_id][char_id]
-            name = char["name"].lower()
+            name = char["name"]
             realm = char["realm"]["slug"]
+            # print(account_pvp_wins, account_pvp_lost)
 
             char_mounts, char_pvp_sum = await asyncio.gather(
                 characters.character_mounts(cc_access_token, name, realm),
                 pvp.get_pvp_summary(name, cc_access_token, realm),
             )  # type: ignore
+
+            # print(char_mounts, char_pvp_sum)
 
             if char_mounts:
                 mounts: list[dict] = char_mounts.get("mounts", [])

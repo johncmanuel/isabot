@@ -11,7 +11,6 @@ from fastapi import BackgroundTasks, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-import isabot.api.leaderboards.update as update
 import isabot.battlenet.account as account
 import isabot.battlenet.guild as guild
 import isabot.battlenet.oauth as auth
@@ -22,6 +21,9 @@ import isabot.discord.commands as commands
 # import isabot.utils.concurrency as concurrency
 import isabot.utils.dictionary as dictionary
 from env import GOOGLE_SERVICE_ACCOUNT
+
+# import isabot.api.leaderboards.update as update
+from isabot.api.background_tasks import update_db_and_upload_entry
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
 from isabot.battlenet.constants import GUILD_REALM
@@ -128,10 +130,12 @@ async def handle_auth(request: Request) -> Response:
 
     af_token = token.get("access_token")
     if not af_token:
+        print("error, couldn't fetch authorization_flow token")
         return Response("Internal server error", 500)
 
     userinfo = await account.account_user_info(af_token)
     if not userinfo:
+        print("error, couldn't fetch user info for account")
         return Response("Internal server error", 500)
 
     return await handle_bnet_wow_data(request, af_token=token, userinfo=userinfo)
@@ -162,12 +166,15 @@ async def handle_bnet_wow_data(
 
         user_id = userinfo["sub"]
 
-        guild_members = (await guild.get_guild_roster(cc_access_token)).get(
-            "members", []
-        )
-
         # Request the information first before storing them in the DB
         profile_summary = await account.account_profile_summary(af_access_token)
+        if not profile_summary:
+            raise
+
+        guild_roster = await guild.get_guild_roster(cc_access_token)  # type: ignore
+        guild_members = []
+        if guild_roster:
+            guild_members = guild_roster.get("members", [])
 
         # Get characters that are only in the guild. Characters in the guild will be used
         # for calculating PvP data. The rest of the characters will be stored
@@ -194,7 +201,9 @@ async def handle_bnet_wow_data(
             # pvp.pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id),
         )
 
-        len_mounts = len(account_mounts.get("mounts", []))
+        len_mounts = 0
+        if account_mounts:
+            len_mounts = len(account_mounts.get("mounts", []))
 
         # Store all data in DB
         await asyncio.gather(
@@ -205,6 +214,7 @@ async def handle_bnet_wow_data(
             store.store_pvp_data(user_id, normal_bg_data),
         )
 
+        # Store session
         request.session["user"] = dict(userinfo)
 
     except Exception as error:
@@ -231,9 +241,9 @@ async def handle_logout(request: Request):
 async def handle_update_leaderboard(
     request: Request, background_tasks: BackgroundTasks
 ):
-    """https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
-
-    Will be testing Google Cloud services
+    """
+    Updates relevant data on the DB. Verifies if the request is from Google Cloud Scheduler.
+    https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
     """
     try:
         id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
@@ -247,9 +257,18 @@ async def handle_update_leaderboard(
     if not is_valid_token(decoded):
         return Response("Invalid request", 400)
 
-    background_tasks.add_task(update.update_db)
+    try:
+        cc_access_token = (await auth.cc_get_access_token()).get("access_token")
+        if not cc_access_token:
+            raise
+    except Exception:
+        return Response("Internal server error.", 500)
 
-    return Response("Updating leaderboard now...", 202)
+    background_tasks.add_task(update_db_and_upload_entry, cc_access_token)
+
+    return Response(
+        "Updating database, uploading and sending the latest leaderboard entry...", 202
+    )
 
 
 async def decode_id_token(id_token: str):
