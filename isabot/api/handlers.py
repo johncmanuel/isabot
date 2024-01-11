@@ -264,11 +264,11 @@ async def handle_update_leaderboard(
     except Exception:
         return Response("Internal server error.", 500)
 
-    background_tasks.add_task(update_db_and_upload_entry, cc_access_token)
-
-    return Response(
-        "Updating database, uploading and sending the latest leaderboard entry...", 202
+    background_tasks.add_task(
+        update_db_and_upload_entry, cc_access_token, str(request.url_for("auth"))
     )
+
+    return Response("Received", 202)
 
 
 async def decode_id_token(id_token: str):

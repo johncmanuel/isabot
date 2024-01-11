@@ -4,7 +4,7 @@
 # pyright: reportOptionalMemberAccess=false
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Union
 
 from aiohttp import BasicAuth, ClientSession
@@ -12,7 +12,6 @@ from authlib.integrations.starlette_client import OAuth
 from fastapi import Request
 from starlette.datastructures import URL
 
-import isabot.battlenet.helpers as helpers
 import isabot.battlenet.store as store
 from env import BATTLENET_CLIENT_ID, BATTLENET_CLIENT_SECRET
 from isabot.battlenet.constants import (
@@ -93,7 +92,7 @@ async def cc_get_access_token(
     if not token:
         raise Exception("client_credentials token not retrieved")
 
-    token["expires_at"] = helpers.convert_to_utc_seconds(token["expires_in"])
+    token["expires_at"] = convert_to_utc_seconds(token["expires_in"])
 
     await store.store_cc_access_token(collection_name=token["sub"], token=token)
 
@@ -101,4 +100,8 @@ async def cc_get_access_token(
 
 
 def is_access_token_expired(token: dict) -> bool:
-    return token["expires_at"] < datetime.now(timezone.utc).timestamp()
+    return token["expires_at"] <= datetime.now(timezone.utc).timestamp()
+
+
+def convert_to_utc_seconds(seconds: int) -> float:
+    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).timestamp()

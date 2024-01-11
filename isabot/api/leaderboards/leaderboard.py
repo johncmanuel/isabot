@@ -34,16 +34,10 @@ Algo for the entire leaderboard
 """
 
 from time import time
-from typing import Optional
 
 from pydantic import BaseModel
 
-import isabot.battlenet.characters as characters
-import isabot.battlenet.guild as guild
-import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
-import isabot.utils.dictionary as dictionary
-from isabot.battlenet.constants import GUILD_REALM
 
 
 class Entry(BaseModel):
@@ -95,22 +89,6 @@ class Leaderboard:
             normal_bg_wins=normal_bg_wins,
         )
 
-    # async def get_players_in_guild(self) -> dict[str, dict]:
-    #     """Get players that're only in the guild for each account"""
-    #     players = {}
-
-    #     guild_roster = (await guild.get_guild_roster(self.cc_access_token)).get(
-    #         "members", []
-    #     )
-    #     account_characters = await store.get_multiple_data("characters")
-
-    #     # Filter results by cross-referencing current guild roster
-    #     for account_id in account_characters:
-    #         chars = account_characters[account_id]
-    #         players[account_id] = guild.get_characters_in_guild(chars, guild_roster)
-
-    #     return players
-
     async def get_users(self) -> dict[str, dict]:
         return await store.get_multiple_data("users")
 
@@ -128,3 +106,52 @@ class Leaderboard:
             collection_path=self.db_collection_path,
             include_autogen_id_field=True,
         )
+
+    def format_entry(self, entry: Entry, lb_type: str) -> str:
+        """Format the recent entry."""
+        field = result_col = field_key = None
+        if lb_type == "mounts":
+            result_col = "Number of Mounts"
+            field_key = "number_of_mounts"
+            field = sort_field(entry.mounts, 1, field_key)
+        elif lb_type == "normal_bg_wins":
+            result_col = "Total Normal BG Wins"
+            field_key = "bg_total_won"
+            field = sort_field(entry.normal_bg_wins, 1, field_key)
+        else:
+            print("no valid lb_types")
+            raise
+
+        # Dynamically set col widths for table based on length
+        # of the input
+        battletag_width = get_max_len_str(entry.players, "battletag")
+        field_width = get_max_len_str(field, lb_type)
+
+        column_widths = {"battletag": battletag_width, result_col: field_width}
+
+        # Create the table header
+        table = ""
+        for key, width in column_widths.items():
+            table += f"{key.ljust(width)} | "
+        table = table.rstrip(" | ") + "\n"
+
+        # Create the table rows
+        for user_id in entry.players:
+            if user_id in field:
+                player = entry.players[user_id]
+                player.update(field[user_id])
+                for key, width in column_widths.items():
+                    if key == result_col:
+                        table += f"{str(player.get(field_key, '')).ljust(width)} | "
+                    else:
+                        table += f"{str(player.get(key, '')).ljust(width)} | "
+                table = table.rstrip(" | ") + "\n"
+        return table
+
+
+def sort_field(dct: dict, idx: int, key: str) -> dict:
+    return dict(sorted(dct.items(), key=lambda x: x[idx][key], reverse=True))
+
+
+def get_max_len_str(field: dict, key: str):
+    return max(len(str(f.get(key, ""))) for f in field.values())
