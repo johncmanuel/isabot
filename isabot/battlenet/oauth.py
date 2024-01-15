@@ -4,7 +4,7 @@
 # pyright: reportOptionalMemberAccess=false
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Union
 
 from aiohttp import BasicAuth, ClientSession
@@ -76,6 +76,8 @@ async def cc_get_access_token(
     if token and not is_access_token_expired(token):
         return token
 
+    token = None
+
     max_retries = 2
     num_retries = 0
     while not token and max_retries > num_retries:
@@ -92,16 +94,22 @@ async def cc_get_access_token(
     if not token:
         raise Exception("client_credentials token not retrieved")
 
-    token["expires_at"] = convert_to_utc_seconds(token["expires_in"])
+    token["expires_at"] = get_expiration_date(token["expires_in"])
 
     await store.store_cc_access_token(collection_name=token["sub"], token=token)
 
     return token
 
 
+# Timezone might be affecting the time calculations for checking expiration dates.
+# It would be better to use the computer clock instead.
+
+
 def is_access_token_expired(token: dict) -> bool:
-    return token["expires_at"] <= datetime.now(timezone.utc).timestamp()
+    # datetime.now(timezone.utc).timestamp()
+    return token["expires_at"] <= datetime.now().timestamp()
 
 
-def convert_to_utc_seconds(seconds: int) -> float:
-    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).timestamp()
+def get_expiration_date(seconds: int) -> float:
+    # datetime.now(timezone.utc)
+    return (datetime.now() + timedelta(seconds=seconds)).timestamp()

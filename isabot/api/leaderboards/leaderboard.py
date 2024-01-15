@@ -33,7 +33,7 @@ Algo for the entire leaderboard
 
 """
 
-from time import time
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -84,7 +84,7 @@ class Leaderboard:
         # TODO: Store acccount's characters that're in guild in a separate collection
         return Entry(
             players=players_characters,
-            date_created=time(),
+            date_created=datetime.now().timestamp(),
             mounts=mounts,
             normal_bg_wins=normal_bg_wins,
         )

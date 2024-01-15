@@ -258,10 +258,14 @@ async def handle_update_leaderboard(
         return Response("Invalid request", 400)
 
     try:
-        cc_access_token = (await auth.cc_get_access_token()).get("access_token")
+        cc_access_token = await auth.cc_get_access_token()
         if not cc_access_token:
             raise
     except Exception:
+        return Response("Internal server error.", 500)
+
+    cc_access_token = cc_access_token.get("access_token")
+    if not cc_access_token:
         return Response("Internal server error.", 500)
 
     background_tasks.add_task(
@@ -282,11 +286,11 @@ async def decode_id_token(id_token: str):
 
 
 def is_valid_token(token: dict, expected_email: str = GOOGLE_SERVICE_ACCOUNT):
-    expired = token.get("exp")
-    email = token.get("email")
+    expired, email = token.get("exp"), token.get("email")
     if not expired:
         return False
-    if int(expired) < datetime.now(timezone.utc).timestamp():
+    # datetime.now(timezone.utc).timestamp()
+    if int(expired) < datetime.now().timestamp():
         return False
     if not email:
         return False
