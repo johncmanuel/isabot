@@ -27,14 +27,11 @@ async def update_db(cc_access_token: str):
             char = chars[account_id][char_id]
             name = char["name"]
             realm = char["realm"]["slug"]
-            # print(account_pvp_wins, account_pvp_lost)
 
             char_mounts, char_pvp_sum = await asyncio.gather(
                 characters.character_mounts(cc_access_token, name, realm),
                 pvp.get_pvp_summary(name, cc_access_token, realm),
             )  # type: ignore
-
-            # print(char_mounts, char_pvp_sum)
 
             if char_mounts:
                 mounts: list[dict] = char_mounts.get("mounts", [])
