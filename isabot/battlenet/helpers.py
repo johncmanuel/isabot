@@ -76,7 +76,6 @@ async def get_bnet_endpt(
                     attempts += 1
                     if response.status == 404:
                         # Don't retry for 404 links
-                        print("not found")
                         raise Exception("Not found")
                     print("failed to fetch", url, response.status, "| retrying...")
                     await asyncio.sleep(1.0)
