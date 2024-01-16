@@ -42,7 +42,7 @@ oauth.register(
 
 
 async def bnet_redirect_authorization(request: Request, url: Union[URL, str]):
-    return await oauth.battlenet.authorize_redirect(request, redirect_uri=url)
+    return await oauth.battlenet.authorize_redirect(request, url)
 
 
 # Functions below are for the client credentials (cc) flow, not the authorization code flow
