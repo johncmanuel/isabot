@@ -1,10 +1,12 @@
 # pyright: reportOptionalMemberAccess=false
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse
+from google.cloud.firestore import AsyncQuery
 
 import isabot.api.handlers as handlers
 import isabot.battlenet.oauth as oauth
+import isabot.battlenet.store as store
 from env import DISCORD_APP_ID, DISCORD_CHANNEL_ID, DISCORD_PUBLIC_KEY
 
 router = APIRouter()
@@ -19,14 +21,16 @@ async def root(request: Request):
     return interaction_res
 
 
-@router.post("/webhook")
-async def manual_webhook():
-    pass
+@router.get("/entries")
+async def entries_all():
+    return await store.get_multiple_data("leaderboard")
 
 
-@router.post("/webhook/:token")
-async def automated_webhook():
-    pass
+@router.get("/entries/recent")
+async def entries_latest():
+    return await store.get_most_recent_doc(
+        "leaderboard", "date_created", AsyncQuery.DESCENDING
+    )
 
 
 @router.get("/invite")
@@ -56,6 +60,6 @@ async def test():
 
 
 @router.get("/update")
-async def update_leaderboard(request: Request):
+async def update_leaderboard(request: Request, background_tasks: BackgroundTasks):
     """https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler"""
-    return await handlers.handle_update_leaderboard(request)
+    return await handlers.handle_update_leaderboard(request, background_tasks)

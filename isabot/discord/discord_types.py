@@ -1,7 +1,8 @@
 from enum import IntEnum
-from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel
+# from typing import Dict, List, Literal, Optional
+
+# from pydantic import BaseModel
 
 """ These types may either be replaced by a library that implements typings for Discord's API or be further expanded upon. """
 

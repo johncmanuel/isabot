@@ -3,12 +3,11 @@
 
 import asyncio
 import traceback
-from concurrent.futures import ThreadPoolExecutor
-from typing import get_args
+from datetime import datetime
 
 from aiohttp import ClientSession
 from authlib.integrations.starlette_client import OAuthError
-from fastapi import Request, Response
+from fastapi import BackgroundTasks, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -17,10 +16,16 @@ import isabot.battlenet.guild as guild
 import isabot.battlenet.oauth as auth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
-import isabot.discord.commands as commands
+
+# import isabot.utils.concurrency as concurrency
+import isabot.utils.dictionary as dictionary
+from env import GOOGLE_SERVICE_ACCOUNT
+
+# import isabot.api.leaderboards.update as update
+from isabot.api.background_tasks import update_db_and_upload_entry
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
-from isabot.battlenet.constants import PVP_BRACKETS
+from isabot.battlenet.constants import GUILD_REALM
 from isabot.discord import verify
 from isabot.discord.discord_types import (
     APIInteractionResponseFlags,
@@ -28,6 +33,8 @@ from isabot.discord.discord_types import (
     APIInteractionType,
     ApplicationCommandOptionType,
 )
+
+# import isabot.discord.commands as commands
 
 
 def _JSONResponse(data: dict) -> JSONResponse:
@@ -124,13 +131,13 @@ async def handle_auth(request: Request) -> Response:
 
     af_token = token.get("access_token")
     if not af_token:
+        print("error, couldn't fetch authorization_flow token")
         return Response("Internal server error", 500)
 
     userinfo = await account.account_user_info(af_token)
     if not userinfo:
+        print("error, couldn't fetch user info for account")
         return Response("Internal server error", 500)
-
-    request.session["user"] = dict(userinfo)
 
     return await handle_bnet_wow_data(request, af_token=token, userinfo=userinfo)
 
@@ -155,47 +162,61 @@ async def handle_bnet_wow_data(
     try:
         af_access_token = af_token["access_token"]
 
-        cc_token = await auth.cc_get_access_token()
+        cc_token = await auth.cc_get_access_token()  # type: ignore
         cc_access_token = cc_token["access_token"]
 
         user_id = userinfo["sub"]
 
-        guild_members = (await guild.get_guild_roster(cc_access_token)).get(
-            "members", []
-        )
-
         # Request the information first before storing them in the DB
         profile_summary = await account.account_profile_summary(af_access_token)
+        if not profile_summary:
+            raise
 
-        # Get characters that are only in the guild
-        wow_accounts = profile_summary.get("wow_accounts", [])
+        guild_roster = await guild.get_guild_roster(cc_access_token)  # type: ignore
+        guild_members = []
+        if guild_roster:
+            guild_members = guild_roster.get("members", [])
+
+        # Get characters that are only in the guild. Characters in the guild will be used
+        # for calculating PvP data. The rest of the characters will be stored
+        # in the database and be used for updating other data (i.e. number of mounts).
         wow_chars = await account.account_characters(
-            wow_accounts, characters_in_guild=True
+            profile_summary.get("wow_accounts", {})
         )
-        wow_chars_in_guild = get_characters_in_guild(wow_chars, guild_members)
+        wow_chars_in_guild_realm = {
+            k: v
+            for k, v in wow_chars.items()
+            if dictionary.safe_nested_get(v, "realm", "slug", default="N/A")
+            in GUILD_REALM
+        }
+        wow_chars_in_guild = guild.get_characters_in_guild(
+            wow_chars_in_guild_realm, guild_members
+        )
 
         # Get mounts and PvP data
-        bg_wins, account_mounts, p = await asyncio.gather(
-            get_normal_bg_data_from_chars(wow_chars_in_guild, cc_access_token, user_id),
+        normal_bg_data, account_mounts = await asyncio.gather(
+            pvp.get_normal_bg_data_from_chars(
+                wow_chars_in_guild, cc_access_token, user_id
+            ),
             account.account_mounts_collection(af_access_token),
-            pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id),
+            # pvp.pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id),
         )
 
-        len_mounts = len(account_mounts["mounts"])
-        pvp_data = {"pvp_brackets": p, "bg_wins": bg_wins}
+        len_mounts = 0
+        if account_mounts:
+            len_mounts = len(account_mounts.get("mounts", []))
 
         # Store all data in DB
-        batch_parallel_write(
-            [
-                lambda: store.store_bnet_userinfo(userinfo),
-                lambda: store.store_access_token("authorization_flow_tokens", af_token),
-                lambda: store.store_wow_accounts(
-                    user_id, {"characters": wow_chars_in_guild}
-                ),
-                lambda: store.store_len_mounts(user_id, len_mounts),
-                lambda: store.store_pvp_data(user_id, pvp_data),
-            ]
+        await asyncio.gather(
+            store.store_bnet_userinfo(userinfo),
+            store.store_access_token("authorization_flow_tokens", af_token),
+            store.store_wow_chars(user_id, wow_chars),
+            store.store_len_mounts(user_id, len_mounts),
+            store.store_pvp_data(user_id, normal_bg_data),
         )
+
+        # Store session
+        request.session["user"] = dict(userinfo)
 
     except Exception as error:
         print("error", error)
@@ -218,10 +239,12 @@ async def handle_logout(request: Request):
     return Response("Successfully logged out!")
 
 
-async def handle_update_leaderboard(request: Request):
-    """https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
-
-    Will be testing Google Cloud services
+async def handle_update_leaderboard(
+    request: Request, background_tasks: BackgroundTasks
+):
+    """
+    Updates relevant data on the DB. Verifies if the request is from Google Cloud Scheduler.
+    https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
     """
     try:
         id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
@@ -232,8 +255,25 @@ async def handle_update_leaderboard(request: Request):
     if not decoded:
         return Response("Invalid request", 400)
 
-    print(decoded)
-    return Response("Successfully updated leaderboard!")
+    if not is_valid_token(decoded):
+        return Response("Invalid request", 400)
+
+    try:
+        cc_access_token = await auth.cc_get_access_token()
+        if not cc_access_token:
+            raise
+    except Exception:
+        return Response("Internal server error.", 500)
+
+    cc_access_token = cc_access_token.get("access_token")
+    if not cc_access_token:
+        return Response("Internal server error.", 500)
+
+    background_tasks.add_task(
+        update_db_and_upload_entry, cc_access_token, str(request.url_for("auth"))
+    )
+
+    return Response("Received", 202)
 
 
 async def decode_id_token(id_token: str):
@@ -246,67 +286,19 @@ async def decode_id_token(id_token: str):
             return await response.json()
 
 
+def is_valid_token(token: dict, expected_email: str = GOOGLE_SERVICE_ACCOUNT):
+    expired, email = token.get("exp"), token.get("email")
+    if not expired:
+        return False
+    # datetime.now(timezone.utc).timestamp()
+    if int(expired) < datetime.now().timestamp():
+        return False
+    if not email:
+        return False
+    if expected_email != email:
+        return False
+    return True
+
+
 def get_discord_invite_url(app_id: str) -> str:
     return f"https://discord.com/api/oauth2/authorize?client_id={app_id}&scope=applications.commands"
-
-
-def get_characters_in_guild(
-    characters: list[dict], guild_roster: list[dict]
-) -> list[dict]:
-    return [
-        c for c in characters for g in guild_roster if c["id"] == g["character"]["id"]
-    ]
-
-
-def batch_parallel_write(tasks: list):
-    """
-    Reference used:
-    https://stackoverflow.com/a/56138825
-    https://stackoverflow.com/a/58897275
-    """
-    with ThreadPoolExecutor() as executor:
-        running_tasks = [executor.submit(task) for task in tasks]
-        for running_task in running_tasks:
-            running_task.result()
-
-
-async def get_normal_bg_data_from_chars(
-    wow_chars_in_guild: list[dict], cc_access_token: str, user_id: str
-) -> dict[str, int]:
-    """Get total wins and loses from each character's battleground statistics"""
-    account_pvp_stats = {"user_id": user_id, "bg_total_won": 0, "bg_total_lost": 0}
-    for char in wow_chars_in_guild:
-        char_pvp_stats = {"char_total_won": 0, "char_total_lost": 0}
-        char_pvp_data = await pvp.get_pvp_summary(
-            char["name"], cc_access_token, char["realm"]["slug"]
-        )
-        for battleground in char_pvp_data.get("pvp_map_statistics", []):
-            match_stats = battleground.get("match_statistics")
-            if not match_stats:
-                continue
-            won, lost = match_stats.get("won"), match_stats.get("lost")
-            char_pvp_stats["char_total_won"] += won
-            char_pvp_stats["char_total_lost"] += lost
-        account_pvp_stats["bg_total_won"] += char_pvp_stats.get("char_total_won", 0)
-        account_pvp_stats["bg_total_lost"] += char_pvp_stats.get("char_total_lost", 0)
-    return account_pvp_stats
-
-
-async def pvp_bracket_data(
-    wow_chars_in_guild: list[dict],
-    cc_access_token: str,
-    # pvp_bracket: PVP_BRACKETS,
-    user_id: str,
-) -> list[dict]:
-    pp = []
-    for char in wow_chars_in_guild:
-        pvp_brackets = get_args(PVP_BRACKETS)
-        for bracket in pvp_brackets:
-            p = await pvp.get_pvp_bracket(
-                char["name"], cc_access_token, bracket, char["realm"]["slug"]
-            )
-            if not p:
-                continue
-            pp.append(p)
-    # return {"bracket_data": pp}
-    return pp

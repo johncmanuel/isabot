@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+import asyncio
 from json import dumps
 from urllib.parse import ParseResult, parse_qsl, unquote, urlencode, urlparse
 
@@ -58,21 +58,30 @@ async def get_bnet_endpt(
 
     `await get_bnet_endpt(url="/profile/user/wow", ...)`
     """
+    attempts = 0
+    max_attempts = 3
     url = add_query_params(f"{base_url}{url}", {"locale": BATTLENET_LOCALE})
+
+    # Retry attempts once errors occurs
     async with ClientSession() as session:
-        async with session.get(
-            url=url,
-            headers={
-                "Authorization": get_bnet_authorization_header(token),
-                "Battlenet-Namespace": get_namespace(namespace),
-            },
-        ) as response:
-            if not response.ok:
-                raise Exception(
-                    f"Failed to fetch endpoint: {url} | {await response.text()}"
-                )
-            return await response.json()
+        while attempts < max_attempts:
+            async with session.get(
+                url=url,
+                headers={
+                    "Authorization": get_bnet_authorization_header(token),
+                    "Battlenet-Namespace": get_namespace(namespace),
+                },
+            ) as response:
+                if not response.ok:
+                    attempts += 1
+                    if response.status == 404:
+                        # Don't retry for 404 links
+                        raise Exception("Not found")
+                    print("failed to fetch", url, response.status, "| retrying...")
+                    await asyncio.sleep(1.0)
+                    # m = f"Failed to fetch endpoint: {url} | {response.status} | {await response.text()}"
+                    # print(m)
+                    # raise Exception(m)
+                return await response.json()
 
-
-def convert_to_utc_seconds(seconds: int) -> float:
-    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).timestamp()
+    raise Exception("Couldn't make request to endpoint.")
