@@ -1,4 +1,4 @@
-import typing
+from typing import Literal
 
 BATTLENET_REGION = "us"
 
@@ -33,6 +33,6 @@ BATTLENET_OAUTH_TOKEN_URI = f"{BATTLENET_OAUTH_URL}/token"
 
 BATTLENET_OAUTH_NAME = "battlenet"
 
-PVP_BRACKETS = typing.Literal["2v2", "3v3", "rbg"]
+PVP_BRACKETS = Literal["2v2", "3v3", "rbg"]
 
 # PVP_BRACKETS: typing.Tuple[PVP_BRACKETS_TYPE, ...] = typing.get_args(PVP_BRACKETS_TYPE)

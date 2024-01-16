@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from env import MIDDLEWARE_SECRET
@@ -25,4 +26,5 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
 )
 app.add_middleware(SessionMiddleware, secret_key=MIDDLEWARE_SECRET)
+app.add_middleware(GZipMiddleware)
 app.include_router(api_router)
