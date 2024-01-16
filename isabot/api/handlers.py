@@ -3,7 +3,7 @@
 
 import asyncio
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime
 
 from aiohttp import ClientSession
 from authlib.integrations.starlette_client import OAuthError
@@ -16,7 +16,6 @@ import isabot.battlenet.guild as guild
 import isabot.battlenet.oauth as auth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
-import isabot.discord.commands as commands
 
 # import isabot.utils.concurrency as concurrency
 import isabot.utils.dictionary as dictionary
@@ -34,6 +33,8 @@ from isabot.discord.discord_types import (
     APIInteractionType,
     ApplicationCommandOptionType,
 )
+
+# import isabot.discord.commands as commands
 
 
 def _JSONResponse(data: dict) -> JSONResponse:
