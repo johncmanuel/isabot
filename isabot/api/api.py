@@ -8,6 +8,7 @@ import isabot.api.handlers as handlers
 import isabot.battlenet.oauth as oauth
 import isabot.battlenet.store as store
 from env import DISCORD_APP_ID, DISCORD_CHANNEL_ID, DISCORD_PUBLIC_KEY
+from isabot.utils.url import https_url_for
 
 router = APIRouter()
 
@@ -40,7 +41,9 @@ async def inv():
 
 @router.get("/login")
 async def login(request: Request):
-    return await oauth.bnet_redirect_authorization(request, request.url_for("auth"))
+    return await oauth.bnet_redirect_authorization(
+        request, https_url_for(request, "auth")
+    )
 
 
 @router.get("/logout")
