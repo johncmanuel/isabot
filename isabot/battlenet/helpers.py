@@ -1,41 +1,9 @@
-import asyncio
-from json import dumps
-from urllib.parse import ParseResult, parse_qsl, unquote, urlencode, urlparse
-
-from aiohttp import ClientSession
-
 from isabot.battlenet.constants import (
     BATTLENET_LOCALE,
     BATTLENET_NAMESPACES,
     BATTLENET_URL,
 )
-
-
-def add_query_params(url: str, params: dict[str, str]) -> str:
-    """https://stackoverflow.com/a/25580545"""
-
-    parsed_url = urlparse(unquote(url))
-
-    # Converting and updating URL arguments
-    parsed_get_args = dict(parse_qsl(parsed_url.query))
-    parsed_get_args.update(params)
-
-    # Ensure that boolean and dictionary values are json-friendly
-    parsed_get_args.update(
-        {k: dumps(v) for k, v in parsed_get_args.items() if isinstance(v, (bool, dict))}
-    )
-
-    # Converting URL argument to proper query string
-    encoded_get_args = urlencode(parsed_get_args, doseq=True)
-
-    return ParseResult(
-        parsed_url.scheme,
-        parsed_url.netloc,
-        parsed_url.path,
-        parsed_url.params,
-        encoded_get_args,
-        parsed_url.fragment,
-    ).geturl()
+from isabot.utils.client import http_client
 
 
 def get_bnet_authorization_header(token: str) -> str:
@@ -53,35 +21,20 @@ async def get_bnet_endpt(
     base_url: str = BATTLENET_URL,
 ):
     """
-    Gets data from a protected endpoint. Note that `url` will
+    Use GET to fetch a protected Battle Net endpoint. Note that `url` will
     append the base url for you, so pass the relative path
 
     `await get_bnet_endpt(url="/profile/user/wow", ...)`
     """
-    attempts = 0
-    max_attempts = 3
-    url = add_query_params(f"{base_url}{url}", {"locale": BATTLENET_LOCALE})
-
-    # Retry attempts once errors occurs
-    async with ClientSession() as session:
-        while attempts < max_attempts:
-            async with session.get(
-                url=url,
-                headers={
-                    "Authorization": get_bnet_authorization_header(token),
-                    "Battlenet-Namespace": get_namespace(namespace),
-                },
-            ) as response:
-                if not response.ok:
-                    attempts += 1
-                    if response.status == 404:
-                        # Don't retry for 404 links
-                        raise Exception("Not found")
-                    print("failed to fetch", url, response.status, "| retrying...")
-                    await asyncio.sleep(1.0)
-                    # m = f"Failed to fetch endpoint: {url} | {response.status} | {await response.text()}"
-                    # print(m)
-                    # raise Exception(m)
-                return await response.json()
-
-    raise Exception("Couldn't make request to endpoint.")
+    try:
+        r = await http_client.get(
+            url=f"{base_url}{url}",
+            headers={
+                "Authorization": get_bnet_authorization_header(token),
+                "Battlenet-Namespace": get_namespace(namespace),
+            },
+            params={"locale": BATTLENET_LOCALE},
+        )
+        return await r.json()
+    except Exception as err:
+        print("exception:", err)

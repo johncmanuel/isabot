@@ -8,15 +8,18 @@ from starlette.middleware.sessions import SessionMiddleware
 from env import MIDDLEWARE_SECRET
 from isabot.api.api import router as api_router
 from isabot.api.handlers import handle_setup
+from isabot.utils.client import http_client
 
 
 @asynccontextmanager
 async def setup_app(app: FastAPI):
     """Setup app by registering the slash commands and other stuff"""
+    await http_client.start()
     await handle_setup()
     yield
     # clean up anything else before exiting app
     # ...
+    await http_client.stop()
 
 
 app = FastAPI(lifespan=setup_app)

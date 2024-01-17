@@ -65,7 +65,8 @@ async def handle_setup() -> None:
     # await commands.bulk_overwrite_commands(
     #     DISCORD_APP_ID, DISCORD_TOKEN, registered_commands
     # )
-    print("Print additional setup logs here")
+    # print("Print additional setup logs here")
+    pass
 
 
 async def handle_discord_app(
