@@ -69,7 +69,7 @@ async def handle_setup() -> None:
 
 
 async def handle_discord_app(
-    request: Request, discord_public_key: str, discord_channel_id: str, url
+    request: Request, discord_public_key: str, discord_channel_id: str, url: str
 ) -> Response:
     """
     Handle incoming requests from Discord
