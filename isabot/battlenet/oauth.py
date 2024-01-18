@@ -101,10 +101,8 @@ async def cc_get_access_token(
 
 
 def is_access_token_expired(token: dict) -> bool:
-    # datetime.now(timezone.utc).timestamp()
     return token["expires_at"] <= datetime.now().timestamp()
 
 
 def get_expiration_date(seconds: int) -> float:
-    # datetime.now(timezone.utc)
     return (datetime.now() + timedelta(seconds=seconds)).timestamp()

@@ -1,6 +1,6 @@
 # from typing import Literal, get_args
 
-from isabot.battlenet.constants import GUILD_REALM, PVP_BRACKETS
+from isabot.battlenet.constants import GUILD_REALM
 from isabot.battlenet.helpers import get_bnet_endpt
 
 
