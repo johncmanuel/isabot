@@ -1,25 +1,20 @@
 from typing import Optional
 
-from google.cloud.firestore import DocumentReference
+from google.cloud.firestore import AsyncCollectionReference, AsyncDocumentReference
 
 from isabot.firebase.setup import db
 
-# Collections in Firestore:
-# users, characters, collections (mounts, toys, etc), pvp
 
-
-def collection_ref(collection_path: str):
+def collection_ref(collection_path: str) -> AsyncCollectionReference:
     return db.collection(collection_path)
 
 
-def document_ref(collection_path: str, document_id: Optional[str]):
+def document_ref(
+    collection_path: str, document_id: Optional[str]
+) -> AsyncDocumentReference:
     if not document_id:
         return collection_ref(collection_path).document()
     return collection_ref(collection_path).document(document_id)
-
-
-def is_document_exists(doc_ref: DocumentReference):
-    return doc_ref.get().exists
 
 
 async def create_document(

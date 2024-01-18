@@ -5,7 +5,6 @@ import asyncio
 import traceback
 from datetime import datetime
 
-from aiohttp import ClientSession
 from authlib.integrations.starlette_client import OAuthError
 from fastapi import BackgroundTasks, Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -16,8 +15,6 @@ import isabot.battlenet.guild as guild
 import isabot.battlenet.oauth as auth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
-
-# import isabot.utils.concurrency as concurrency
 import isabot.utils.dictionary as dictionary
 from env import GOOGLE_SERVICE_ACCOUNT
 
@@ -26,13 +23,14 @@ from isabot.api.background_tasks import update_db_and_upload_entry
 from isabot.api.discord import register
 from isabot.api.discord.base import BASE
 from isabot.battlenet.constants import GUILD_REALM
-from isabot.discord import verify
 from isabot.discord.discord_types import (
     APIInteractionResponseFlags,
     APIInteractionResponseType,
     APIInteractionType,
     ApplicationCommandOptionType,
 )
+from isabot.discord.verify import verify_request
+from isabot.utils.client import http_client
 
 # import isabot.discord.commands as commands
 
@@ -76,7 +74,7 @@ async def handle_discord_app(
     Handle incoming requests from Discord
     https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
     """
-    v = await verify.verify_request(request, discord_public_key)
+    v = await verify_request(request, discord_public_key)
     body, error = v["body"], v["error"]
 
     if error:
@@ -112,6 +110,10 @@ async def handle_discord_app(
 
 
 async def handle_auth(request: Request) -> Response:
+    """
+    Handles authentication after the user has entered their credentials
+    via Battle Net OAuth.
+    """
     user = request.session.get("user")
     if user:
         return Response(
@@ -278,20 +280,20 @@ async def handle_update_leaderboard(
 
 
 async def decode_id_token(id_token: str):
-    async with ClientSession() as session:
-        async with session.get(
+    """Decodes the ID token issued by Google Cloud Scheduler"""
+    try:
+        r = await http_client.get(
             url=f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
-        ) as response:
-            if not response.ok:
-                return None
-            return await response.json()
+        )
+        return await r.json()
+    except Exception:
+        return None
 
 
 def is_valid_token(token: dict, expected_email: str = GOOGLE_SERVICE_ACCOUNT):
     expired, email = token.get("exp"), token.get("email")
     if not expired:
         return False
-    # datetime.now(timezone.utc).timestamp()
     if int(expired) < datetime.now().timestamp():
         return False
     if not email:

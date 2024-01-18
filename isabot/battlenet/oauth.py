@@ -7,7 +7,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Union
 
-from aiohttp import BasicAuth, ClientSession
+from aiohttp import BasicAuth
 from authlib.integrations.starlette_client import OAuth
 from fastapi import Request
 from starlette.datastructures import URL
@@ -21,6 +21,7 @@ from isabot.battlenet.constants import (
     BATTLENET_OAUTH_URL,
     BATTLENET_URL,
 )
+from isabot.utils.client import http_client
 
 oauth = OAuth()
 oauth.register(
@@ -42,26 +43,20 @@ oauth.register(
 
 
 async def bnet_redirect_authorization(request: Request, url: Union[URL, str]):
+    """Redirects users to the Battle Net OAuth server to login."""
     return await oauth.battlenet.authorize_redirect(request, url)
 
 
-# Functions below are for the client credentials (cc) flow, not the authorization code flow
-
-
 async def cc_handler(url: str, client_id: str, client_secret: str):
-    async with ClientSession() as session:
-        async with session.post(
-            url=url,
-            auth=BasicAuth(client_id, client_secret),
-            data={
-                "grant_type": "client_credentials",
-            },
-        ) as response:
-            if not response.ok:
-                raise Exception(
-                    f"Failed to fetch endpoint: {url}, {response.status}, {await response.text()}"
-                )
-            return await response.json()
+    """Get OAuth client credentials"""
+    r = await http_client.post(
+        url=url,
+        auth=BasicAuth(client_id, client_secret),
+        data={
+            "grant_type": "client_credentials",
+        },
+    )
+    return await r.json()
 
 
 async def cc_get_access_token(

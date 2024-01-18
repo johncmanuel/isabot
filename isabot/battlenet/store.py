@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional, Union
 
 import isabot.firebase.crud as crud
 
@@ -14,6 +14,7 @@ TODO: move this module somewhere else that's not in the battlenet module
 
 
 async def store_access_token(name: str, token: dict):
+    """Stores the AF (Authorization Flow) token into the database."""
     access_token_doc_ref = await crud.create_document(
         name,
         token.get("sub", "None"),
@@ -29,14 +30,16 @@ async def store_access_token(name: str, token: dict):
 
 async def get_access_token(
     token_id: str, collection_name: str = "authorization_flow_tokens"
-):
+) -> Union[Dict[str, Any], None]:
+    """Gets the AF (Authorization Flow) token from the database."""
     token = await crud.read_document(collection_name, token_id)
     return token
 
 
 async def delete_access_token(
     token_id: str, collection_name: str = "authorization_flow_tokens"
-):
+) -> bool:
+    """Deletes the AF (Authorization Flow) token from the database."""
     return await crud.delete_document(collection_name, token_id)
 
 

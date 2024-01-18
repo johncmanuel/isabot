@@ -24,11 +24,13 @@ async def root(request: Request):
 
 @router.get("/entries")
 async def entries_all():
+    """Return all entries of the leaderboard."""
     return await store.get_multiple_data("leaderboard")
 
 
 @router.get("/entries/recent")
 async def entries_latest():
+    """Return the current entry of the leaderboard."""
     return await store.get_most_recent_doc(
         "leaderboard", "date_created", AsyncQuery.DESCENDING
     )
@@ -36,6 +38,7 @@ async def entries_latest():
 
 @router.get("/invite")
 async def inv():
+    """Redirects users to the Discord invite URL for the bot."""
     return RedirectResponse(handlers.get_discord_invite_url(DISCORD_APP_ID))
 
 
@@ -57,12 +60,11 @@ async def auth(request: Request):
 
 
 @router.get("/health")
-async def test():
+async def health():
     """https://byjos.dev/cloud-run-hot-service/"""
     return {"hi": "welcome"}
 
 
 @router.get("/update")
 async def update_leaderboard(request: Request, background_tasks: BackgroundTasks):
-    """https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler"""
     return await handlers.handle_update_leaderboard(request, background_tasks)
