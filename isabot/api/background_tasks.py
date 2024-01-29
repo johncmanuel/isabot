@@ -18,53 +18,51 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
     except Exception as error:
         print("couldn't run update function:", error)
 
-    lb = leaderboard.Leaderboard(cc_access_token)
-
-    # try:
-    #     lb = leaderboard.Leaderboard(cc_access_token)
-    #     users, mounts, bg = await asyncio.gather(
-    #         lb.get_users(),
-    #         lb.get_mounts(),
-    #         lb.get_normal_bg_stats(),
-    #     )
-    #     entry = lb.create_entry(users, mounts, bg)
-    #     await lb.upload_entry(entry)
-    # except Exception as error:
-    #     print("couldn't run entry function:", error)
-    #     # If uploading a new entry didn't work, just end the task here.
-    #     return
+    try:
+        lb = leaderboard.Leaderboard(cc_access_token)
+        users, mounts, bg = await asyncio.gather(
+            lb.get_users(),
+            lb.get_mounts(),
+            lb.get_normal_bg_stats(),
+        )
+        entry = lb.create_entry(users, mounts, bg)
+        await lb.upload_entry(entry)
+    except Exception as error:
+        print("couldn't run entry function:", error)
+        # If uploading a new entry didn't work, just end the task here.
+        return
 
     # TODO: Use below mock data for making tests in future
-    entry = Entry(
-        players={
-            "12345678": {"battletag": "player1", "id": "12345678"},
-            "87654321": {"battletag": "player2", "id": "87654321"},
-            "98765432": {"battletag": "player3", "id": "98765432"},
-        },
-        date_created=1643347200.0,
-        mounts={
-            "12345678": {"number_of_mounts": 1238},
-            "87654321": {"number_of_mounts": 38482},
-            "98765432": {"number_of_mounts": 20},
-        },
-        normal_bg_wins={
-            "12345678": {
-                "bg_total_won": 120,
-                "bg_total_lost": 20,
-                "user_id": "12345678",
-            },
-            "87654321": {
-                "bg_total_won": 80,
-                "bg_total_lost": 50,
-                "user_id": "87654321",
-            },
-            "98765432": {
-                "bg_total_won": 200,
-                "bg_total_lost": 30,
-                "user_id": "98765432",
-            },
-        },
-    )
+    # entry = Entry(
+    #     players={
+    #         "12345678": {"battletag": "player1", "id": "12345678"},
+    #         "87654321": {"battletag": "player2", "id": "87654321"},
+    #         "98765432": {"battletag": "player3", "id": "98765432"},
+    #     },
+    #     date_created=1643347200.0,
+    #     mounts={
+    #         "12345678": {"number_of_mounts": 1238},
+    #         "87654321": {"number_of_mounts": 38482},
+    #         "98765432": {"number_of_mounts": 20},
+    #     },
+    #     normal_bg_wins={
+    #         "12345678": {
+    #             "bg_total_won": 120,
+    #             "bg_total_lost": 20,
+    #             "user_id": "12345678",
+    #         },
+    #         "87654321": {
+    #             "bg_total_won": 80,
+    #             "bg_total_lost": 50,
+    #             "user_id": "87654321",
+    #         },
+    #         "98765432": {
+    #             "bg_total_won": 200,
+    #             "bg_total_lost": 30,
+    #             "user_id": "98765432",
+    #         },
+    #     },
+    # )
 
     # Then make a POST req to a discord webhook representing the current leaderboard
     lb_types = ["normal_bg_wins", "mounts"]
