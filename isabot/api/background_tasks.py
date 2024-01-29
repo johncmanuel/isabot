@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime
-from enum import IntEnum
 from typing import Optional
 
 import isabot.api.leaderboards.leaderboard as leaderboard
@@ -8,6 +7,8 @@ import isabot.api.leaderboards.update as update
 import isabot.discord.webhook as webhook
 import isabot.utils.concurrency as concurr
 from env import DISCORD_WEBHOOK_URL
+from isabot.api.leaderboards.leaderboard import Entry
+from isabot.discord.discord_types import Embed, EmbedColorCodes, EmbedField
 
 
 async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> None:
@@ -31,21 +32,66 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
         # If uploading a new entry didn't work, just end the task here.
         return
 
+    # TODO: Use below mock data for making tests in future
+    # entry = Entry(
+    #     players={
+    #         "12345678": {"battletag": "player1", "id": "12345678"},
+    #         "87654321": {"battletag": "player2", "id": "87654321"},
+    #         "98765432": {"battletag": "player3", "id": "98765432"},
+    #     },
+    #     date_created=1643347200.0,
+    #     mounts={
+    #         "12345678": {"number_of_mounts": 1238},
+    #         "87654321": {"number_of_mounts": 38482},
+    #         "98765432": {"number_of_mounts": 20},
+    #     },
+    #     normal_bg_wins={
+    #         "12345678": {
+    #             "bg_total_won": 120,
+    #             "bg_total_lost": 20,
+    #             "user_id": "12345678",
+    #         },
+    #         "87654321": {
+    #             "bg_total_won": 80,
+    #             "bg_total_lost": 50,
+    #             "user_id": "87654321",
+    #         },
+    #         "98765432": {
+    #             "bg_total_won": 200,
+    #             "bg_total_lost": 30,
+    #             "user_id": "98765432",
+    #         },
+    #     },
+    # )
+
     # Then make a POST req to a discord webhook representing the current leaderboard
     lb_types = ["normal_bg_wins", "mounts"]
     embeds = []
 
     def prepare_embed(lb_type: str):
-        options = {
-            "title": f"AR Club Leaderboard - {lb_type.replace('_', ' ').title()}",
-            "description": "Weekly WoW guild leaderboard for the AR Club!",
-            "auth_url": auth_url,
-            "lb_type": lb_type,
-            "start_date": datetime.fromtimestamp(entry.date_created).strftime("%c"),
-            "scores": lb.format_entry(entry, lb_type),
-        }
-        embed = create_embed(options)
-        embeds.append({"embeds": embed})
+        scores = lb.format_entry(entry, lb_type)
+        start_date = datetime.fromtimestamp(entry.date_created).strftime("%c")
+        embed = Embed(
+            title=f"AR Club Leaderboard - {lb_type.replace('_', ' ').title()}",
+            description="Weekly WoW guild leaderboard for the AR Club!",
+            auth_url=auth_url,
+            lb_type=lb_type,
+            start_date=start_date,
+            color=get_color_by_leaderboard_type(lb_type),
+            scores=scores,
+            fields=[
+                EmbedField(
+                    name=f"Register your Battle Net account down below:",
+                    value=f"[Click me!]({auth_url})",
+                ),
+                EmbedField(
+                    name=f"Leaderboard for week of {start_date}",
+                    value=f"```{scores}```",
+                    inline=True,
+                ),
+            ],
+        ).model_dump()
+        embeds.append({"embeds": [embed]})
 
     # Run the webhook operations in parallel
     try:
@@ -58,47 +104,10 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
         return
 
 
-def create_embed(options: dict):
-    """
-    https://discord.com/developers/docs/resources/channel#embed-object
-    TODO: Create a type for options; it'll make the dev experience a bit
-    better.
-    """
-    embed = {
-        "title": options["title"],
-        "description": options["description"],
-        "color": get_color_by_leaderboard_type(options["lb_type"]),
-        "fields": [
-            {
-                "name": f"Register your Battle Net account down below:",
-                "value": f"[Click me!]({options['auth_url']})",
-            },
-            {
-                "name": f"Leaderboard for week of {options['start_date']}",
-                "value": f"```{options['scores']}```",
-                "inline": True,
-            },
-        ],
-    }
-
-    return [embed]
-
-
-def get_color_by_leaderboard_type(lb_type: Optional[str] = None):
+def get_color_by_leaderboard_type(lb_type: Optional[str] = None) -> int:
     """lb_type accepts 'mounts' or 'pvp'. If lb_type is invalid or unspecified, default color is darker gray."""
     if lb_type == "mounts":
         return EmbedColorCodes.DARK_GREEN
     elif lb_type == "normal_bg_wins":
         return EmbedColorCodes.DARK_ORANGE
     return EmbedColorCodes.DARKER_GRAY
-
-
-class EmbedColorCodes(IntEnum):
-    """
-    Will only cherry-pick the colors that are needed.
-    https://discordpy.readthedocs.io/en/latest/api.html#colour
-    """
-
-    DARK_GREEN = 0x1F8B4C
-    DARK_ORANGE = 0xA84300  # The closest to brown we can get... :(
-    DARKER_GRAY = 0x546E7A

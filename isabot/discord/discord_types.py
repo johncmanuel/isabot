@@ -1,8 +1,10 @@
 from enum import IntEnum
+from typing import Optional
+
+from pydantic import BaseModel
 
 # from typing import Dict, List, Literal, Optional
 
-# from pydantic import BaseModel
 
 """ These types may either be replaced by a library that implements typings for Discord's API or be further expanded upon. """
 
@@ -82,3 +84,35 @@ class APIInteractionResponseFlags(IntEnum):
     """https://discord.com/developers/docs/resources/channel#message-object-message-flags"""
 
     Ephemeral = 1 << 6
+
+
+class EmbedColorCodes(IntEnum):
+    """
+    Will only cherry-pick the colors that are needed.
+    https://discordpy.readthedocs.io/en/latest/api.html#colour
+    """
+
+    DARK_GREEN = 0x1F8B4C
+    DARK_ORANGE = 0xA84300  # The closest to brown we can get... :(
+    DARKER_GRAY = 0x546E7A
+
+
+class EmbedField(BaseModel):
+    """https://discord.com/developers/docs/resources/channel#embed-object-embed-structure"""
+
+    name: str
+    value: str
+    inline: Optional[bool] = False
+
+
+class Embed(BaseModel):
+    """https://discord.com/developers/docs/resources/channel#embed-object-embed-structure"""
+
+    title: str
+    description: str
+    lb_type: str
+    fields: Optional[list[EmbedField]] = []
+    auth_url: str
+    scores: str
+    start_date: str
+    color: Optional[int] = EmbedColorCodes.DARKER_GRAY
