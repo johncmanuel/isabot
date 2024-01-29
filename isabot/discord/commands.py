@@ -16,7 +16,7 @@ def get_bot_authorization_header(token: str) -> str:
     return token if token.startswith("Bot ") else f"Bot {token}"
 
 
-"""TODO: create a session wrapper to reduce code duplication for aiohttp's client session"""
+"""TODO: Use custom session wrapper, but make sure to test these functions first."""
 
 
 async def register_slash_command(
