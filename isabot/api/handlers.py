@@ -1,6 +1,6 @@
 # pyright: reportOptionalMemberAccess=false
 
-
+# TODO: clean up imports using __init__.py files
 import asyncio
 import traceback
 from datetime import datetime
@@ -250,15 +250,8 @@ async def handle_update_leaderboard(
     https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
     """
     try:
-        id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
+        await verify_update_request(request)
     except Exception:
-        return Response("Invalid request", 400)
-
-    decoded = await decode_id_token(id_token)
-    if not decoded:
-        return Response("Invalid request", 400)
-
-    if not is_valid_token(decoded):
         return Response("Invalid request", 400)
 
     try:
@@ -277,6 +270,22 @@ async def handle_update_leaderboard(
     )
 
     return Response("Received", 202)
+
+
+async def verify_update_request(request: Request):
+    """Verify if the request is from Google Cloud Scheduler"""
+    try:
+        id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
+    except Exception:
+        raise Exception
+
+    decoded = await decode_id_token(id_token)
+
+    if not decoded:
+        raise Exception
+
+    if not is_valid_token(decoded):
+        raise Exception
 
 
 async def decode_id_token(id_token: str):
