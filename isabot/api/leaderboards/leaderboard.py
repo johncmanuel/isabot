@@ -110,63 +110,93 @@ class Leaderboard:
     def format_entry(self, entry: Entry, lb_type: str) -> str:
         """
         Format the recent entry.
-        TODO: Parition this function into smaller functions.
         """
         field = result_col = field_key = None
         if lb_type == "mounts":
             result_col = "Number of Mounts"
             field_key = "number_of_mounts"
-            # field = sort_field(entry.mounts, 1, field_key)
             field = entry.mounts
         elif lb_type == "normal_bg_wins":
             result_col = "Total Normal BG Wins"
             field_key = "bg_total_won"
             field = entry.normal_bg_wins
-            # field = sort_field(entry.normal_bg_wins, 1, field_key)
         else:
             print("no valid lb_types")
             raise
 
-        # Dynamically set column widths for table based on length
-        # of the input
-        battletag_width = get_max_len_str(entry.players, "battletag")
-        field_width = get_max_len_str(field, lb_type)
+        table = create_table(entry, field, lb_type, result_col, field_key)
 
-        column_widths = {"battletag": battletag_width, result_col: field_width}
-
-        # Create the table header
-        table = ""
-        for key, width in column_widths.items():
-            table += f"{key.ljust(width)} | "
-        table = table.rstrip(" | ") + "\n"
-
-        # Create the table rows
-        rows = []
-        for user_id in entry.players:
-            if user_id in field:
-                player = entry.players[user_id]
-                player.update(field[user_id])
-                row = {}
-                for key, width in column_widths.items():
-                    if key == result_col:
-                        # table += f"{str(player.get(field_key, '')).ljust(width)} | "
-                        row[key] = str(player.get(field_key, "")).ljust(width)
-                    else:
-                        # table += f"{str(player.get(key, '')).ljust(width)} | "
-                        row[key] = str(player.get(key, "")).ljust(width)
-                # table = table.rstrip(" | ") + "\n"
-                rows.append(row)
-
-        # return table
-
-        sorted_rows = sorted(rows, key=lambda x: int(x[result_col]), reverse=True)
-
-        for row in sorted_rows:
-            for key, width in column_widths.items():
-                table += f"{row[key]} | "
-            table = table.rstrip(" | ") + "\n"
         return table
 
 
-def get_max_len_str(field: dict, key: str):
+def create_table(
+    entry: Entry, field, lb_type: str, result_col: str, field_key: str
+) -> str:
+    """Creates a readable leaderboard table for the entries"""
+
+    # Dynamically set column widths for table based on length
+    # of the input.
+    # To account for battletags that are shorter than the header name ("battletag" in this case),
+    # get the max width between the header name and the longest battletag
+    battletag_width = max(
+        len("battletag"), max_len_str_in_field(entry.players, "battletag")
+    )
+    field_width = max_len_str_in_field(field, lb_type)
+
+    column_widths = {"battletag": battletag_width, result_col: field_width}
+
+    table = ""
+
+    table = create_table_header(column_widths, table)
+    rows = create_table_rows(column_widths, entry, field, result_col, field_key)
+
+    # Sort the rows by the result column and append them to the table
+    sorted_rows = sorted(rows, key=lambda x: x[result_col], reverse=True)
+
+    table = add_table_rows(sorted_rows, column_widths, table)
+
+    return table
+
+
+def create_table_header(column_widths: dict[str, int], table: str) -> str:
+    """Creates the header for the current table."""
+    for key, width in column_widths.items():
+        table += f"{key.ljust(width)} | "
+    return table.rstrip(" | ") + "\n"
+
+
+def create_table_rows(
+    column_widths: dict[str, int],
+    entry: Entry,
+    field: dict,
+    result_col: str,
+    field_key: str,
+) -> list:
+    """Create the rows for the current table."""
+    rows = []
+    for user_id in entry.players:
+        if user_id in field:
+            player = entry.players[user_id]
+            player.update(field[user_id])
+            row = {}
+            for key, width in column_widths.items():
+                if key == result_col:
+                    row[key] = f'{str(player.get(field_key, "")).ljust(width)} | '
+                else:
+                    row[key] = f'{str(player.get(key, "")).ljust(width)} | '
+            rows.append(row)
+    return rows
+
+
+def add_table_rows(rows: list, column_widths: dict[str, int], table: str):
+    """Add the rows to the current table."""
+    for row in rows:
+        for key, width in column_widths.items():
+            table += str(row.get(key, "")).ljust(width)
+        table = table.rstrip(" | ") + "\n"
+    return table
+
+
+def max_len_str_in_field(field: dict, key: str):
+    """Gets the max length of the string in a field."""
     return max(len(str(f.get(key, ""))) for f in field.values())

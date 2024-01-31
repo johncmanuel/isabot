@@ -1,6 +1,6 @@
 # pyright: reportOptionalMemberAccess=false
 
-
+# TODO: clean up imports using __init__.py files
 import asyncio
 import traceback
 from datetime import datetime
@@ -16,7 +16,7 @@ import isabot.battlenet.oauth as auth
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
 import isabot.utils.dictionary as dictionary
-from env import GOOGLE_SERVICE_ACCOUNT
+from env import CURRENT_ENV, GOOGLE_SERVICE_ACCOUNT
 
 # import isabot.api.leaderboards.update as update
 from isabot.api.background_tasks import update_db_and_upload_entry
@@ -249,17 +249,12 @@ async def handle_update_leaderboard(
     Updates relevant data on the DB. Verifies if the request is from Google Cloud Scheduler.
     https://stackoverflow.com/questions/53181297/verify-http-request-from-google-cloud-scheduler
     """
-    try:
-        id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
-    except Exception:
-        return Response("Invalid request", 400)
-
-    decoded = await decode_id_token(id_token)
-    if not decoded:
-        return Response("Invalid request", 400)
-
-    if not is_valid_token(decoded):
-        return Response("Invalid request", 400)
+    # Verify the request if the application is in production
+    if CURRENT_ENV == "production":
+        try:
+            await verify_update_request(request)
+        except Exception:
+            return Response("Invalid request", 400)
 
     try:
         cc_access_token = await auth.cc_get_access_token()
@@ -277,6 +272,22 @@ async def handle_update_leaderboard(
     )
 
     return Response("Received", 202)
+
+
+async def verify_update_request(request: Request):
+    """Verify if the request is from Google Cloud Scheduler"""
+    try:
+        id_token = request.headers.get("Authorization").replace("Bearer", "").strip()
+    except Exception:
+        raise Exception
+
+    decoded = await decode_id_token(id_token)
+
+    if not decoded:
+        raise Exception
+
+    if not is_valid_token(decoded):
+        raise Exception
 
 
 async def decode_id_token(id_token: str):
