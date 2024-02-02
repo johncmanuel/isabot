@@ -68,7 +68,7 @@ async def handle_setup() -> None:
 
 
 async def handle_discord_app(
-    request: Request, discord_public_key: str, discord_channel_id: str, url: str
+    request: Request, discord_public_key: str, url: str
 ) -> Response:
     """
     Handle incoming requests from Discord
@@ -86,8 +86,6 @@ async def handle_discord_app(
         return _JSONResponse({"type": APIInteractionResponseType.Pong})
 
     if interactionType != APIInteractionType.ApplicationCommand:
-        return Response("Invalid request.", 400)
-    if body["channel_id"] != discord_channel_id:
         return Response("Invalid request.", 400)
     if not body["member"]:
         return Response("Invalid request.", 400)

@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from env import MIDDLEWARE_SECRET
+from env import CURRENT_ENV, MIDDLEWARE_SECRET, PORT
 from isabot.api.api import router as api_router
 from isabot.api.handlers import handle_setup
 from isabot.utils.client import http_client
@@ -31,3 +32,20 @@ app.add_middleware(
 app.add_middleware(SessionMiddleware, secret_key=MIDDLEWARE_SECRET)
 app.add_middleware(GZipMiddleware)
 app.include_router(api_router)
+
+
+def start():
+    """
+    Start the FastAPI app using the Uvicorn server.
+    References:
+    https://stackoverflow.com/a/73909126
+    https://stackoverflow.com/a/65850100
+    """
+    if CURRENT_ENV != "production":
+        uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
+    else:
+        uvicorn.run(app, host="0.0.0.0", port=PORT)  # type: ignore
+
+
+if __name__ == "__main__":
+    start()

@@ -7,7 +7,7 @@ from google.cloud.firestore import AsyncQuery
 import isabot.api.handlers as handlers
 import isabot.battlenet.oauth as oauth
 import isabot.battlenet.store as store
-from env import DISCORD_APP_ID, DISCORD_CHANNEL_ID, DISCORD_PUBLIC_KEY
+from env import DISCORD_APP_ID, DISCORD_PUBLIC_KEY
 from isabot.utils.url import https_url_for
 
 router = APIRouter()
@@ -17,7 +17,7 @@ router = APIRouter()
 async def root(request: Request):
     """Handle interactions here"""
     interaction_res = await handlers.handle_discord_app(
-        request, DISCORD_PUBLIC_KEY, DISCORD_CHANNEL_ID, str(request.url_for("login"))
+        request, DISCORD_PUBLIC_KEY, str(request.url_for("login"))
     )
     return interaction_res
 
