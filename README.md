@@ -6,7 +6,7 @@ Discord bot for AR Club's Discord Server. This bot will send weekly guild leader
 
 Data will be recorded in a cloud database.
 
-The idea of having weekly leaderboards was inspired by Ethan's [lc-dailies project.](https://github.com/acmcsufoss/lc-dailies)
+The idea of having weekly leaderboards was inspired by [Ethan](https://github.com/EthanThatOneKid)'s [lc-dailies project.](https://github.com/acmcsufoss/lc-dailies)
 
 ## Purpose
 
@@ -25,6 +25,15 @@ The purpose of Isabot is to promote friendly competition within the guild, recog
 
 ## Getting Started
 
+### Essentials
+
+This project requires the following software:
+
+-   [Python 3.9](https://www.python.org/downloads/release/python-390/)
+-   Text editor of your choice
+
+Afterwards, set your .env file according to `.env.example`.
+
 ### Poetry
 
 Install [Poetry, a tool for managing packages within a virtual environment.](https://python-poetry.org/)
@@ -39,17 +48,29 @@ Use the below command to convert `poetry.lock` to `requirements.txt`:
 poetry export -f requirements.txt --output requirements.txt --without-hashes
 ```
 
-Run the server with: `poetry run uvicorn main:app --reload`
-
-> NOTE: The default port number is 8000.
+Run the server with: `poetry run start`
 
 ### Nix
 
-WIP
+Alternatively, you can use [Nix](https://nixos.org/) to setup the developer environment without manually downloading the required software (i.e Python 3.9, Poetry, etc)
+
+> For beginners setting up Nix for the first time, see <https://nix.libdb.so/slides> for guidance.
+
+After installation, run the following command at the root of this project:
+
+```bash
+nix-shell
+```
+
+After some use, [you can clean the Nix store](https://nlewo.github.io/nixos-manual-sphinx/administration/cleaning-store.xml.html) before using the shell if needed:
+
+```bash
+nix-collect-garbage
+```
 
 ## Development
 
-Use [ngrok](https://ngrok.com/) to test features such as OAuth:
+Use [ngrok](https://ngrok.com/) to test features that may require HTTPS such as OAuth:
 
 ```bash
 # default port of app is 8000
@@ -63,6 +84,6 @@ ngrok http 8000
 
 isabot can technically be deployed anywhere. Even better if using containers! However, the application and the deployment is geared towards the Google Cloud ecosystem. In the future, the project will be more flexible with deployments.
 
-## Design Document (contains list of endpoints)
+## Design Document
 
 [Link to Google Document](https://docs.google.com/document/d/1CLyRQKKIdoB_0SqAfUjjma9gKK5hDBCVHVExUOhPM64/edit?usp=sharing)

@@ -22,6 +22,9 @@ firebase-admin = "^6.3.0"
 black = "^23.11.0"
 flake8 = "^6.1.0"
 
+[tool.poetry.scripts]
+start = "main:start"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
