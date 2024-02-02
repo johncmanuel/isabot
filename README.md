@@ -38,7 +38,11 @@ Afterwards, set your .env file according to `.env.example`.
 
 Install [Poetry, a tool for managing packages within a virtual environment.](https://python-poetry.org/)
 
-Install packages: `poetry install`
+Then install packages:
+
+```bash
+poetry install
+```
 
 Then, inject a plugin for Poetry called [Export](https://github.com/python-poetry/poetry-plugin-export). This plugin will help with exporting `poetry.lock` into other formats such as `requirements.txt`.
 
@@ -48,11 +52,15 @@ Use the below command to convert `poetry.lock` to `requirements.txt`:
 poetry export -f requirements.txt --output requirements.txt --without-hashes
 ```
 
-Run the server with: `poetry run start`
+Run the server with:
+
+```bash
+poetry run start
+```
 
 ### Nix
 
-Alternatively, you can use [Nix](https://nixos.org/) to setup the developer environment without manually downloading the required software (i.e Python 3.9, Poetry, etc)
+Alternatively, you can use [Nix](https://nixos.org/) to setup the developer environment without manually downloading the required software (i.e Python 3.9, Poetry, project dependencies, etc).
 
 > For beginners setting up Nix for the first time, see <https://nix.libdb.so/slides> for guidance.
 
@@ -61,6 +69,8 @@ After installation, run the following command at the root of this project:
 ```bash
 nix-shell
 ```
+
+You are now able to [run the commands mentioned above!](#poetry)
 
 After some use, [you can clean the Nix store](https://nlewo.github.io/nixos-manual-sphinx/administration/cleaning-store.xml.html) before using the shell if needed:
 
