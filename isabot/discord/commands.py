@@ -5,14 +5,19 @@ from isabot.discord.constants import DISCORD_API_URL
 
 
 def get_register_command_url(app_id: str, base: str = DISCORD_API_URL) -> str:
+    """Return the URL to register a Discord command."""
     return f"{base}/applications/{app_id}/commands"
 
 
-def get_global_app_cmd_url(app_id: str, cmd_id: str, base: str = DISCORD_API_URL):
+def get_global_app_cmd_url(
+    app_id: str, cmd_id: str, base: str = DISCORD_API_URL
+) -> str:
+    """Return the URL to fetch a global Discord application command."""
     return f"{get_register_command_url(app_id, base)}{cmd_id}"
 
 
 def get_bot_authorization_header(token: str) -> str:
+    """Return the bot's authorization header."""
     return token if token.startswith("Bot ") else f"Bot {token}"
 
 

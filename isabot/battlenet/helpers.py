@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 from isabot.battlenet.constants import (
     BATTLENET_LOCALE,
     BATTLENET_NAMESPACES,
@@ -19,7 +21,7 @@ async def get_bnet_endpt(
     token: str,
     namespace: str = "static",
     base_url: str = BATTLENET_URL,
-):
+) -> Union[Any, None]:
     """
     Use GET to fetch a protected Battle Net endpoint. Note that `url` will
     append the base url for you, so pass the relative path
@@ -38,3 +40,4 @@ async def get_bnet_endpt(
         return await r.json()
     except Exception as err:
         print("exception:", err)
+        return None

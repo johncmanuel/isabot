@@ -16,10 +16,10 @@ class HttpClient:
 
     session: Optional[aiohttp.ClientSession] = None
 
-    async def start(self):
+    async def start(self) -> None:
         self.session = aiohttp.ClientSession()
 
-    async def stop(self):
+    async def stop(self) -> None:
         if self.session:
             await self.session.close()
             self.session = None
@@ -35,10 +35,11 @@ class HttpClient:
         max_retry_attempts: int = 3,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> Any:
         """
         Perform an async HTTP request to a given endpoint. This will perform a limited amount of
-        retries if errors occur. After multiple, failed retries, raise an Exception.
+        retries if errors occur. After multiple, failed retries, raise an Exception. Though, this does
+        not retry for 404 errors.
         """
         attempts = 0
         while attempts < max_retry_attempts:

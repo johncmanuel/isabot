@@ -2,7 +2,12 @@ from isabot.utils.client import http_client
 
 
 async def run_webhook(url: str, data: dict):
-    """https://discord.com/developers/docs/resources/webhook#execute-webhook"""
+    """
+    Execute a webhook in Discord.
+    https://discord.com/developers/docs/resources/webhook#execute-webhook
+
+    TODO: Create type for webhook data in discord_types.py
+    """
     return await http_client.post(
         url=url,
         headers={

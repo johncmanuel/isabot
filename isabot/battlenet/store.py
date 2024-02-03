@@ -44,10 +44,14 @@ async def delete_access_token(
 
 
 async def store_bnet_userinfo(userinfo: dict, collection_name: str = "users"):
+    """Stores the userinfo from the BattleNet OAuth flow into the database."""
     sub = userinfo.pop("sub", "None")
     userinfo["id"] = str(userinfo["id"])
-    # Strip the unique identifier from the battletag for privacy
+
+    # Strip the unique identifier from the battletag for privacy reasons.
+    # Plus, this would keep the bots from spamming the user with friend requests.
     userinfo["battletag"] = userinfo["battletag"].split("#")[0]
+
     userinfo_doc_ref = await crud.create_document(collection_name, sub, userinfo)
     return userinfo_doc_ref
 

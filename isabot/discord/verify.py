@@ -1,9 +1,11 @@
+from typing import Any
+
 from fastapi import Request, Response
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
 
-async def verify_request(req: Request, public_key: str):
+async def verify_request(req: Request, public_key: str) -> dict[str, Any]:
     """
     Verify if the incoming request is from Discord.
     Docs: https://discord.com/developers/docs/interactions/receiving-and-responding#security-and-authorization
