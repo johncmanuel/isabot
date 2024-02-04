@@ -101,6 +101,7 @@ class Leaderboard:
         return await store.get_multiple_data("pvp")
 
     async def upload_entry(self, data: Entry):
+        """Upload the entry to the leaderboard collection in the DB"""
         await store.store_data(
             data.model_dump(),
             collection_path=self.db_collection_path,
@@ -151,7 +152,9 @@ def create_table(
     rows = create_table_rows(column_widths, entry, field, result_col, field_key)
 
     # Sort the rows by the result column and append them to the table
-    sorted_rows = sorted(rows, key=lambda x: x[result_col], reverse=True)
+    sorted_rows = sorted(
+        rows, key=lambda x: int(str(x[result_col].strip(" | "))), reverse=True
+    )
 
     table = add_table_rows(sorted_rows, column_widths, table)
 
@@ -159,7 +162,7 @@ def create_table(
 
 
 def create_table_header(column_widths: dict[str, int], table: str) -> str:
-    """Creates the header for the current table."""
+    """Create the header for the current table."""
     for key, width in column_widths.items():
         table += f"{key.ljust(width)} | "
     return table.rstrip(" | ") + "\n"
@@ -198,5 +201,5 @@ def add_table_rows(rows: list, column_widths: dict[str, int], table: str):
 
 
 def max_len_str_in_field(field: dict, key: str):
-    """Gets the max length of the string in a field."""
+    """Get the max length of the string in a field."""
     return max(len(str(f.get(key, ""))) for f in field.values())
