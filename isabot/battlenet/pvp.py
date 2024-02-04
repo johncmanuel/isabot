@@ -5,14 +5,12 @@ from isabot.battlenet.helpers import get_bnet_endpt
 
 
 async def get_pvp_summary(character_name: str, token: str, realm: str = GUILD_REALM[0]):
-    try:
-        return await get_bnet_endpt(
-            f"/profile/wow/character/{realm}/{character_name.lower()}/pvp-summary",
-            token,
-            "profile",
-        )
-    except Exception:
-        return None
+    """Return a WoW character's pvp summary data."""
+    return await get_bnet_endpt(
+        f"/profile/wow/character/{realm}/{character_name.lower()}/pvp-summary",
+        token,
+        "profile",
+    )
 
 
 # async def get_pvp_bracket(
@@ -34,7 +32,10 @@ async def get_pvp_summary(character_name: str, token: str, realm: str = GUILD_RE
 async def get_normal_bg_data_from_chars(
     wow_chars_in_guild: dict, cc_access_token: str, user_id: str
 ) -> dict:
-    """Get total wins and loses from each character's battleground statistics"""
+    """
+    Get total wins and loses from each WoW character's battleground statistics
+    TODO: Since the logic is being duplicated multiple times, refactor it to a helper function.
+    """
     account_bg_total_won, account_bg_total_lost = 0, 0
     for char in wow_chars_in_guild.values():
         char_pvp_data = await get_pvp_summary(

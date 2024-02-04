@@ -3,9 +3,8 @@
 # It's probably best to turn off type checkers to avoid errors
 # pyright: reportOptionalMemberAccess=false
 
-import asyncio
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Any, Dict, Union
 
 from aiohttp import BasicAuth
 from authlib.integrations.starlette_client import OAuth
@@ -42,26 +41,9 @@ oauth.register(
 )
 
 
-async def bnet_redirect_authorization(request: Request, url: Union[URL, str]):
-    """Redirects users to the Battle Net OAuth server to login."""
-    return await oauth.battlenet.authorize_redirect(request, url)
-
-
-async def cc_handler(url: str, client_id: str, client_secret: str):
-    """Get OAuth client credentials"""
-    r = await http_client.post(
-        url=url,
-        auth=BasicAuth(client_id, client_secret),
-        data={
-            "grant_type": "client_credentials",
-        },
-    )
-    return await r.json()
-
-
 async def cc_get_access_token(
     collection_path: str = "client_credentials_token",
-):
+) -> Union[Dict[str, Any], None]:
     """
     Retrieves client credentials access token from the DB if it's not expired yet or it exists. Else,
     request a new one and store it in DB. If the request(s) to retrieve a new token fails, raise an Exception.
@@ -71,20 +53,11 @@ async def cc_get_access_token(
     if token and not is_access_token_expired(token):
         return token
 
-    token = None
-
-    max_retries = 2
-    num_retries = 0
-    while not token and max_retries > num_retries:
-        try:
-            token = await cc_handler(
-                BATTLENET_OAUTH_TOKEN_URI,
-                BATTLENET_CLIENT_ID,
-                BATTLENET_CLIENT_SECRET,
-            )
-        except Exception:
-            num_retries += 1
-            await asyncio.sleep(1)
+    token = await cc_handler(
+        BATTLENET_OAUTH_TOKEN_URI,
+        BATTLENET_CLIENT_ID,
+        BATTLENET_CLIENT_SECRET,
+    )
 
     if not token:
         raise Exception("client_credentials token not retrieved")
@@ -106,3 +79,24 @@ def is_access_token_expired(token: dict) -> bool:
 
 def get_expiration_date(seconds: int) -> float:
     return (datetime.now() + timedelta(seconds=seconds)).timestamp()
+
+
+async def cc_handler(url: str, client_id: str, client_secret: str):
+    """Get OAuth client credentials"""
+    try:
+        r = await http_client.post(
+            url=url,
+            auth=BasicAuth(client_id, client_secret),
+            data={
+                "grant_type": "client_credentials",
+            },
+        )
+        return await r.json()
+    except Exception as err:
+        print("failed to get client credentials, exception:", err)
+        return None
+
+
+async def bnet_redirect_authorization(request: Request, url: Union[URL, str]) -> Any:
+    """Redirects users to the Battle Net OAuth server to login."""
+    return await oauth.battlenet.authorize_redirect(request, url)

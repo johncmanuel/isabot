@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 """ These types may either be replaced by a library that implements typings for Discord's API or be further expanded upon. """
-
+""" TODO: Work more on Discord types. """
 # class ApplicationCommandPermissionType(IntEnum):
 #     """
 #     https://discord.com/developers/docs/interactions/application-commands#application-command-permissions-object-application-command-permission-type

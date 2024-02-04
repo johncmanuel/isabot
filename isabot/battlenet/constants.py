@@ -1,6 +1,9 @@
 from typing import Literal
 
+# Region and locale to retrieve Battle Net data from.
+# https://develop.battle.net/documentation/guides/regionality-and-apis
 BATTLENET_REGION = "us"
+BATTLENET_LOCALE = "en_US"
 
 # Available options are: Static, Dynamic, and Profile
 # More information here:
@@ -13,11 +16,8 @@ BATTLENET_NAMESPACES = {
     "profile": f"profile-{BATTLENET_REGION}",
 }
 
-BATTLENET_LOCALE = "en_US"
-
+# Base URL for Battle Net API
 BATTLENET_URL = f"https://{BATTLENET_REGION}.api.blizzard.com"
-
-BATTLENET_ALT_URL = f"https://{BATTLENET_REGION}.battle.net"
 
 # Slug name for AR Club
 GUILD_NAME = "ar-club"
@@ -25,14 +25,15 @@ GUILD_NAME = "ar-club"
 # Slug name for AR Club's realm, Bronzebeard-Shandris
 GUILD_REALM = ("shandris", "bronzebeard")
 
+# Battle Net OAuth URL
 BATTLENET_OAUTH_URL = "https://oauth.battle.net"
 
+# Battle Net OAuth authorize and token URIs
 BATTLENET_OAUTH_AUTHORIZE_URI = f"{BATTLENET_OAUTH_URL}/authorize"
-
 BATTLENET_OAUTH_TOKEN_URI = f"{BATTLENET_OAUTH_URL}/token"
 
+# Battle Net OAuth name
 BATTLENET_OAUTH_NAME = "battlenet"
 
+# WoW's supported PVP brackets
 PVP_BRACKETS = Literal["2v2", "3v3", "rbg"]
-
-# PVP_BRACKETS: typing.Tuple[PVP_BRACKETS_TYPE, ...] = typing.get_args(PVP_BRACKETS_TYPE)
