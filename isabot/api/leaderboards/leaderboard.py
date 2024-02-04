@@ -153,7 +153,7 @@ def create_table(
 
     # Sort the rows by the result column and append them to the table
     sorted_rows = sorted(
-        rows, key=lambda x: int(str(x[result_col].strip(" | "))), reverse=True
+        rows, key=lambda x: int(str(x[result_col]).strip(" | ")), reverse=True
     )
 
     table = add_table_rows(sorted_rows, column_widths, table)
