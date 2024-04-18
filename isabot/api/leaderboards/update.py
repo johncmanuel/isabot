@@ -12,7 +12,7 @@ async def update_db(cc_access_token: str):
     overwrite any existing data.
     TODO: Refactor the code by creating reusable functions for processing data
     (i.e pvp, mounts, etc).
-    TODO: Make API requests in batches to prevent avoid passing rate limit per second:
+    TODO: Make API requests in batches to avoid passing rate limit per second:
     (see the section, "Throttling" at https://develop.battle.net/documentation/guides/getting-started)
     """
     chars = await store.get_multiple_data("characters")
