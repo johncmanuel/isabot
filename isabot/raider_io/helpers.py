@@ -15,12 +15,15 @@ async def get_raider_io_endpt(
     """
     Make a GET request to the Raider IO API.
 
+    Note that base_url already contains the Raider.IO base URL. Thus,
+    only pass the endpoint URL as the "url" parameter.
+
     Example "url" values:
     - "/characters/profile"
     - "/periods"
     - "/guilds/profile"
 
-    Supply additional query parameters using kwargs.
+    Additional query parameters can be passed.
     """
     try:
         r = await http_client.get(
