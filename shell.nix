@@ -15,11 +15,11 @@ let
 
 in pkgs.mkShell {
 	buildInputs = with pkgs; [
-        python39
+        python3
         poetry
 	];
     shellHook = ''
-        poetry env use 3.9
+        poetry env use 3.11
         poetry install
     '';
 	# Solves the "libstdc++ not found" issue

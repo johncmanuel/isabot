@@ -1,6 +1,6 @@
 # pyright: reportOptionalMemberAccess=false
 
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google.cloud.firestore import AsyncQuery
 
@@ -8,6 +8,8 @@ import isabot.api.handlers as handlers
 import isabot.battlenet.oauth as oauth
 import isabot.battlenet.store as store
 from env import DISCORD_APP_ID, DISCORD_PUBLIC_KEY
+
+# from isabot.raider_io.mythic import get_character_info, get_overall_mythic_plus_score
 from isabot.utils.url import https_url_for
 
 router = APIRouter()
@@ -68,3 +70,14 @@ async def health():
 @router.get("/update")
 async def update_leaderboard(request: Request, background_tasks: BackgroundTasks):
     return await handlers.handle_update_leaderboard(request, background_tasks)
+
+
+# @router.get("/test")
+# async def testing():
+#     k = await get_character_info(
+#         "heektor", "shandris", "us", fields="mythic_plus_scores_by_season:current, gear"
+#     )
+#     s = get_overall_mythic_plus_score(k)  # type: ignore
+
+#     print(s)
+#     return {"test": "lol"}

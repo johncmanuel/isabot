@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from datetime import datetime
 from typing import Optional
 
@@ -7,17 +8,21 @@ import isabot.api.leaderboards.update as update
 import isabot.discord.webhook as webhook
 import isabot.utils.concurrency as concurr
 from env import DISCORD_WEBHOOK_URL
-from isabot.api.leaderboards.leaderboard import Entry
+from isabot.api.leaderboards.data_types import LEADERBOARD_TYPES  # , Entry
+
+# from isabot.api.leaderboards.mock.mock_data import mock_entry1
 from isabot.discord.discord_types import Embed, EmbedColorCodes, EmbedField
 
 
 async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> None:
     """Background task that will update the DB with relevant data and upload the latest entry"""
     try:
+        print("running update function")
         await update.update_db(cc_access_token)
     except Exception as error:
         print("couldn't run update function:", error)
 
+    print("processed update and uploaded to firestore")
     try:
         lb = leaderboard.Leaderboard(cc_access_token)
         users, mounts, bg = await asyncio.gather(
@@ -32,40 +37,11 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
         # If uploading a new entry didn't work, just end the task here.
         return
 
-    # TODO: Use below mock data for making tests in future
-    # entry = Entry(
-    #     players={
-    #         "12345678": {"battletag": "player1", "id": "12345678"},
-    #         "87654321": {"battletag": "player2", "id": "87654321"},
-    #         "98765432": {"battletag": "player3", "id": "98765432"},
-    #     },
-    #     date_created=1643347200.0,
-    #     mounts={
-    #         "12345678": {"number_of_mounts": 1238},
-    #         "87654321": {"number_of_mounts": 38482},
-    #         "98765432": {"number_of_mounts": 20},
-    #     },
-    #     normal_bg_wins={
-    #         "12345678": {
-    #             "bg_total_won": 120,
-    #             "bg_total_lost": 20,
-    #             "user_id": "12345678",
-    #         },
-    #         "87654321": {
-    #             "bg_total_won": 80,
-    #             "bg_total_lost": 50,
-    #             "user_id": "87654321",
-    #         },
-    #         "98765432": {
-    #             "bg_total_won": 200,
-    #             "bg_total_lost": 30,
-    #             "user_id": "98765432",
-    #         },
-    #     },
-    # )
+    print("processed entry and uploaded to firestore")
+
+    # entry = mock_entry1
 
     # Then make a POST req to a discord webhook representing the current leaderboard
-    lb_types = ["normal_bg_wins", "mounts"]
     embeds = []
 
     def prepare_embed(lb_type: str):
@@ -95,12 +71,15 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
 
     # Run the webhook operations in parallel
     try:
-        concurr.batch_parallel_run([lambda t=t: prepare_embed(t) for t in lb_types])
+        concurr.batch_parallel_run(
+            [lambda t=t: prepare_embed(t) for t in LEADERBOARD_TYPES]
+        )
         await asyncio.gather(
             *[webhook.run_webhook(DISCORD_WEBHOOK_URL, e) for e in embeds]
         )
-    except Exception as error:
-        print("error when running webhook", error)
+        print("processed embeds and sent data to discord webhook")
+    except Exception:
+        print("error when running webhook", traceback.format_exc())
         return
 
 
