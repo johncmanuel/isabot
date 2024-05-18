@@ -4,7 +4,7 @@
 # for it here: 
 # https://fastapi.tiangolo.com/deployment/docker/#docker-image-with-poetry
 
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
