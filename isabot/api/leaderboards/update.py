@@ -3,6 +3,7 @@ import asyncio
 import isabot.battlenet.characters as characters
 import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
+import isabot.raider_io.mythic as mythic
 import isabot.utils.dictionary as dictionary
 
 
@@ -10,10 +11,14 @@ async def update_db(cc_access_token: str):
     """
     Updates current DB with new relevant data from a user's character list. This should also
     overwrite any existing data.
+
     TODO: Refactor the code by creating reusable functions for processing data
-    (i.e pvp, mounts, etc).
+    (i.e pvp, mounts, etc)!!!!!
+
     TODO: Make API requests in batches to avoid passing rate limit per second:
     (see the section, "Throttling" at https://develop.battle.net/documentation/guides/getting-started)
+
+    TODO: Time to add the mythic LB data to the leaderboard!
     """
     chars = await store.get_multiple_data("characters")
 
