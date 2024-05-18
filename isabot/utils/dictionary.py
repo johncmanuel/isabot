@@ -3,7 +3,10 @@ def safe_nested_get(
     *keys,
     default=None,
 ):
-    """https://stackoverflow.com/a/25833661"""
+    """
+    Safely get a nested value from a dictionary.
+    https://stackoverflow.com/a/25833661
+    """
     for key in keys:
         try:
             dct = dct[key]
