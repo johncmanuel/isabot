@@ -17,10 +17,12 @@ from isabot.discord.discord_types import Embed, EmbedColorCodes, EmbedField
 async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> None:
     """Background task that will update the DB with relevant data and upload the latest entry"""
     try:
+        print("running update function")
         await update.update_db(cc_access_token)
     except Exception as error:
         print("couldn't run update function:", error)
 
+    print("processed update and uploaded to firestore")
     try:
         lb = leaderboard.Leaderboard(cc_access_token)
         users, mounts, bg = await asyncio.gather(
@@ -34,6 +36,8 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
         print("couldn't run entry function:", error)
         # If uploading a new entry didn't work, just end the task here.
         return
+
+    print("processed entry and uploaded to firestore")
 
     # entry = mock_entry1
 
@@ -73,6 +77,7 @@ async def update_db_and_upload_entry(cc_access_token: str, auth_url: str) -> Non
         await asyncio.gather(
             *[webhook.run_webhook(DISCORD_WEBHOOK_URL, e) for e in embeds]
         )
+        print("processed embeds and sent data to discord webhook")
     except Exception:
         print("error when running webhook", traceback.format_exc())
         return
