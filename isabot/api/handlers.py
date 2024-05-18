@@ -31,6 +31,7 @@ from isabot.discord.discord_types import (
 )
 from isabot.discord.verify import verify_request
 from isabot.utils.client import http_client
+from isabot.utils.url import https_url_for
 
 # import isabot.discord.commands as commands
 
@@ -265,9 +266,14 @@ async def handle_update_leaderboard(
     if not cc_access_token:
         return Response("Internal server error.", 500)
 
-    background_tasks.add_task(
-        update_db_and_upload_entry, cc_access_token, str(request.url_for("auth"))
+    print("Received verified update request, will begin processing...")
+
+    login_url = (
+        https_url_for(request, "login")
+        if CURRENT_ENV == "production"
+        else str(request.url_for("login"))
     )
+    background_tasks.add_task(update_db_and_upload_entry, cc_access_token, login_url)
 
     return Response("Received", 202)
 
