@@ -1,7 +1,6 @@
 import asyncio
 
-import isabot.battlenet.characters as characters
-import isabot.battlenet.pvp as pvp
+import isabot.battlenet.endpoints as endpoints
 import isabot.battlenet.store as store
 import isabot.raider_io.mythic as mythic
 import isabot.utils.dictionary as dictionary
@@ -34,8 +33,8 @@ async def update_db(cc_access_token: str):
             realm = char["realm"]["slug"]
 
             char_mounts, char_pvp_sum = await asyncio.gather(
-                characters.character_mounts(cc_access_token, name, realm),
-                pvp.get_pvp_summary(name, cc_access_token, realm),
+                endpoints.character_mounts(cc_access_token, name, realm),
+                endpoints.get_pvp_summary(name, cc_access_token, realm),
             )  # type: ignore
 
             if char_mounts:

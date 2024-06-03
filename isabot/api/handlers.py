@@ -10,10 +10,8 @@ from fastapi import BackgroundTasks, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-import isabot.battlenet.account as account
-import isabot.battlenet.guild as guild
+import isabot.battlenet.endpoints as endpoints
 import isabot.battlenet.oauth as auth
-import isabot.battlenet.pvp as pvp
 import isabot.battlenet.store as store
 import isabot.utils.dictionary as dictionary
 from env import CURRENT_ENV, GOOGLE_SERVICE_ACCOUNT
@@ -135,7 +133,7 @@ async def handle_auth(request: Request) -> Response:
         print("error, couldn't fetch authorization_flow token")
         return Response("Internal server error", 500)
 
-    userinfo = await account.account_user_info(af_token)
+    userinfo = await endpoints.account_user_info(af_token)
     if not userinfo:
         print("error, couldn't fetch user info for account")
         return Response("Internal server error", 500)
@@ -169,7 +167,7 @@ async def handle_bnet_wow_data(
         user_id = userinfo["sub"]
 
         # Request the information first before storing them in the DB
-        profile_summary = await account.account_profile_summary(af_access_token)
+        profile_summary = await endpoints.account_profile_summary(af_access_token)
         if not profile_summary:
             raise
 
@@ -181,7 +179,7 @@ async def handle_bnet_wow_data(
         # Get characters that are only in the guild. Characters in the guild will be used
         # for calculating PvP data. The rest of the characters will be stored
         # in the database and be used for updating other data (i.e. number of mounts).
-        wow_chars = await account.account_characters(
+        wow_chars = await endpoints.account_characters(
             profile_summary.get("wow_accounts", {})
         )
         wow_chars_in_guild_realm = {
@@ -190,16 +188,16 @@ async def handle_bnet_wow_data(
             if dictionary.safe_nested_get(v, "realm", "slug", default="N/A")
             in GUILD_REALM
         }
-        wow_chars_in_guild = guild.get_characters_in_guild(
+        wow_chars_in_guild = endpoints.get_characters_in_guild(
             wow_chars_in_guild_realm, guild_members
         )
 
         # Get mounts and PvP data
         normal_bg_data, account_mounts = await asyncio.gather(
-            pvp.get_normal_bg_data_from_chars(
+            endpoints.get_normal_bg_data_from_chars(
                 wow_chars_in_guild, cc_access_token, user_id
             ),
-            account.account_mounts_collection(af_access_token),
+            endpoints.account_mounts_collection(af_access_token),
             # pvp.pvp_bracket_data(wow_chars_in_guild, cc_access_token, user_id),
         )
 
