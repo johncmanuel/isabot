@@ -1,3 +1,0 @@
-[flake8]
-; max-line-length = 88
-extend-ignore = E203,W291,E501,W293,E405
