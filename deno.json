@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts"
+    "dev": "deno run --watch -A --env --unstable-kv --unstable-cron main.ts"
   },
   "imports": {
     "@deno/kv-oauth": "jsr:@deno/kv-oauth@^0.11.0",
