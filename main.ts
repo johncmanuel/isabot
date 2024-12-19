@@ -1,8 +1,10 @@
 import { createHelpers } from "@deno/kv-oauth";
-import { createBattleNetOAuthConfig } from "./lib/kv-oauth.ts";
+import { BATTLENET_SCOPE, createBattleNetOAuthConfig } from "./lib/kv-oauth.ts";
 
 const { handleCallback, getSessionId, signIn, signOut } = createHelpers(
-  createBattleNetOAuthConfig(),
+  createBattleNetOAuthConfig({
+    scope: BATTLENET_SCOPE,
+  }),
   {
     cookieOptions: {
       expires: 60 * 60 * 24 * 7,

@@ -16,6 +16,8 @@ if (
 
 export const kv = await Deno.openKv(path);
 
+export const BATTLENET_SCOPE = ["wow.profile"];
+
 export const createBattleNetOAuthConfig = (config?: {
   redirectUri?: string;
   scope?: string[] | string;
