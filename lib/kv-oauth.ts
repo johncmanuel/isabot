@@ -4,6 +4,18 @@ import {
 } from "./consts.ts";
 import { getRequiredEnv, type OAuth2ClientConfig } from "jsr:@deno/kv-oauth";
 
+// https://jsr.io/@deno/kv-oauth/0.11.0/lib/_kv.ts#L2
+const DENO_KV_PATH_KEY = "DENO_KV_PATH";
+let path = undefined;
+if (
+  (await Deno.permissions.query({ name: "env", variable: DENO_KV_PATH_KEY }))
+    .state === "granted"
+) {
+  path = Deno.env.get(DENO_KV_PATH_KEY);
+}
+
+export const kv = await Deno.openKv(path);
+
 export const createBattleNetOAuthConfig = (config?: {
   redirectUri?: string;
   scope?: string[] | string;

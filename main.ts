@@ -1,5 +1,5 @@
 import { createHelpers } from "@deno/kv-oauth";
-import { createBattleNetOAuthConfig } from "./lib/oauth.ts";
+import { createBattleNetOAuthConfig } from "./lib/kv-oauth.ts";
 
 const { handleCallback, getSessionId, signIn, signOut } = createHelpers(
   createBattleNetOAuthConfig(),
