@@ -122,6 +122,25 @@ const handler = async (req: Request) => {
       } else {
         console.error("Characters already in the KV");
       }
+
+      // Store mount data
+      const mounts = await client.getAccountMountsCollection();
+      const totalNumMounts = mounts.mounts.length;
+
+      // Store in KV
+      const mountKey = ["players", sub, "mounts"];
+      const res3 = await kv.atomic().check({
+        key: mountKey,
+        versionstamp: null,
+      })
+        .set(mountKey, { totalNumMounts })
+        .commit();
+      if (res3.ok) {
+        console.log("Mounts not yet in the KV, inserting:", { totalNumMounts });
+      } else {
+        console.error("Mounts already in the KV");
+      }
+
       return response;
     }
     case "/protected":

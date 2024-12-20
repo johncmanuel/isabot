@@ -142,6 +142,60 @@ export interface GuildRosterResponse {
   members: GuildMember[];
 }
 
+export interface MountMediaAsset {
+  key: {
+    href: string;
+  };
+  id: number;
+}
+
+export interface MountColor {
+  name: string;
+}
+
+export interface Mount {
+  creature_displays: {
+    key: {
+      href: string;
+    };
+    id: number;
+  }[];
+  id: number;
+  is_useable: boolean;
+  name: string;
+  source: {
+    type: string;
+    name: string;
+  };
+  colors?: MountColor[];
+  should_exclude_if_uncollected?: boolean;
+  faction?: {
+    type: string;
+    name: string;
+  };
+  requirements?: {
+    faction?: {
+      type: string;
+      name: string;
+    };
+    classes?: {
+      name: string;
+    }[];
+    races?: {
+      name: string;
+    }[];
+  };
+}
+
+export interface MountsCollectionResponse {
+  _links: {
+    self: {
+      href: string;
+    };
+  };
+  mounts: Mount[];
+}
+
 export interface BattleNetAccountUserInfoResponse {
   id: number;
   sub: string;
@@ -213,10 +267,13 @@ export class BattleNetClient {
     });
   }
 
-  public async getAccountMountsCollection() {
-    return await this.fetch("/profile/user/wow/collections/mounts", {
-      namespace: "profile",
-    });
+  public async getAccountMountsCollection(): Promise<MountsCollectionResponse> {
+    return await this.fetch<MountsCollectionResponse>(
+      "/profile/user/wow/collections/mounts",
+      {
+        namespace: "profile",
+      },
+    );
   }
 
   public async getCharacterMounts(characterName: string, realmSlug: string) {
