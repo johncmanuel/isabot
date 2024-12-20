@@ -20,6 +20,13 @@ if (
 
 export const kv = await Deno.openKv(path);
 
+// Logged in player schema for KV
+export interface PlayerSchema {
+  battleTag: string;
+  accessToken: string;
+  expiresIn: number;
+}
+
 export const createOAuthHelpers = (req: Request) => {
   const baseUrl = getBaseUrl(req);
   console.log(baseUrl);

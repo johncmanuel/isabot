@@ -1,35 +1,6 @@
-import { createHelpers } from "@deno/kv-oauth";
-import {
-  BATTLENET_SCOPE,
-  createBattleNetOAuthConfig,
-  kv,
-} from "./lib/kv-oauth.ts";
-
-const getBaseUrl = (req: Request): string => {
-  const url = new URL(req.url);
-  // Always ensure HTTPS for this kind of project
-  return `https://${url.host}`;
-};
-
-const createOAuthHelpers = (req: Request) => {
-  const baseUrl = getBaseUrl(req);
-  console.log(baseUrl);
-  const cookieExpiresSecs = Deno.env.get("ENV") !== "development"
-    ? 60 * 60 * 24 * 7 // 7 days
-    : 0;
-  return createHelpers(
-    createBattleNetOAuthConfig({
-      scope: BATTLENET_SCOPE,
-      redirectUri: `${baseUrl}/callback`,
-    }),
-    {
-      cookieOptions: {
-        expires: cookieExpiresSecs,
-        httpOnly: true,
-      },
-    },
-  );
-};
+import { createOAuthHelpers, kv, PlayerSchema } from "./lib/kv-oauth.ts";
+import { BattleNetClient } from "./lib/bnet.ts";
+import { getExpirationDate } from "./lib/utils.ts";
 
 const handler = async (req: Request) => {
   const { pathname } = new URL(req.url);
@@ -54,6 +25,40 @@ const handler = async (req: Request) => {
     case "/callback": {
       const { response, tokens } = await handleCallback(req);
       const { expiresIn, accessToken } = tokens;
+
+      if (!accessToken) {
+        console.error("No access token found");
+        return response;
+      }
+      console.log("Access token:", accessToken, "expires in:", expiresIn);
+
+      const expiresInDate = getExpirationDate(expiresIn);
+
+      const client = new BattleNetClient(accessToken);
+
+      // insert user into KV
+      const { sub, battletag } = await client.getAccountUserInfo();
+      // Players are mapped to key ["players", sub] where sub is the string form of the player's ID
+      // https://docs.deno.com/deploy/kv/manual/#improve-querying-with-secondary-indexes
+      const key = ["players", sub];
+      const player: PlayerSchema = {
+        // Since the player's battle tag will be public, remove the discriminator (is that what u call it?)
+        // so they don't get spammed to death by bots selling gold
+        battleTag: battletag.split("#")[0],
+        accessToken,
+        expiresIn: expiresInDate,
+      };
+
+      const res = await kv.atomic().check({ key, versionstamp: null }).set(
+        key,
+        player,
+      ).commit();
+      if (res.ok) {
+        console.log("Player not yet in the KV, inserting:", player);
+      } else {
+        console.error("Player already in the KV");
+      }
+
       return response;
     }
     case "/protected":
