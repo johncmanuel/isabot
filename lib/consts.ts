@@ -36,7 +36,7 @@ export const BATTLENET_URL: string =
 export const GUILD_NAME: string = "ar-club";
 
 // Slug name for AR Club's realm, Bronzebeard-Shandris
-export const GUILD_REALM: [string, string] = ["shandris", "bronzebeard"];
+export const GUILD_REALM = ["shandris", "bronzebeard"];
 
 // Battle Net OAuth URL
 export const BATTLENET_OAUTH_URL: string = "https://oauth.battle.net";

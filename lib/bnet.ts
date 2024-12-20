@@ -14,6 +14,7 @@ interface RequestOptions {
   region?: string;
   locale?: string;
   baseUrl?: string; // in case we need to override the default
+  token?: string; // either use account access token or client credentials token
 }
 
 export interface WowAccount {
@@ -82,6 +83,65 @@ export interface WowProfileResponse {
   };
 }
 
+export interface GuildMember {
+  character: {
+    name: string;
+    id: number;
+    realm: {
+      key: {
+        href: string;
+      };
+      name: string;
+      id: number;
+      slug: string;
+    };
+    level: number;
+    playable_class: {
+      key: {
+        href: string;
+      };
+      name: string;
+      id: number;
+    };
+    playable_race: {
+      key: {
+        href: string;
+      };
+      name: string;
+      id: number;
+    };
+  };
+  rank: number;
+}
+
+export interface GuildRosterResponse {
+  _links: {
+    self: {
+      href: string;
+    };
+  };
+  guild: {
+    key: {
+      href: string;
+    };
+    name: string;
+    id: number;
+    realm: {
+      key: {
+        href: string;
+      };
+      name: string;
+      id: number;
+      slug: string;
+    };
+    faction: {
+      type: string;
+      name: string;
+    };
+  };
+  members: GuildMember[];
+}
+
 export interface BattleNetAccountUserInfoResponse {
   id: number;
   sub: string;
@@ -112,6 +172,7 @@ export class BattleNetClient {
       region = this.defaultRegion,
       locale = this.defaultLocale,
       baseUrl = this.baseUrl,
+      token = this.accessToken,
     }: RequestOptions,
   ): Promise<T> {
     let url = new URL(`${this.baseUrl}${endpoint}`);
@@ -125,7 +186,7 @@ export class BattleNetClient {
 
     const response = await fetch(url, {
       headers: {
-        "Authorization": `Bearer ${this.accessToken}`,
+        "Authorization": `Bearer ${token}`,
         "Accept": "application/json",
       },
     });
@@ -139,7 +200,7 @@ export class BattleNetClient {
     return response.json();
   }
 
-  public async getAccountProfileSummary(): Promise<WowProfileResponse> {
+  public async getAccountWoWProfileSummary(): Promise<WowProfileResponse> {
     return await this.fetch<WowProfileResponse>("/profile/user/wow", {
       namespace: "profile",
     });
@@ -163,6 +224,24 @@ export class BattleNetClient {
       `/profile/user/wow/character/${realmSlug}/${characterName.toLowerCase()}/collections/mounts`,
       {
         namespace: "profile",
+      },
+    );
+  }
+
+  public async getGuildRoster(
+    clientCredentialsToken: string,
+    realmSlug: string | string[],
+    guildName: string,
+  ): Promise<GuildRosterResponse> {
+    if (Array.isArray(realmSlug)) {
+      // Use the first realm in the list
+      realmSlug = realmSlug[0];
+    }
+    return await this.fetch<GuildRosterResponse>(
+      `/data/wow/guild/${realmSlug.toLowerCase()}/${guildName.toLowerCase()}/roster`,
+      {
+        namespace: "profile",
+        token: clientCredentialsToken,
       },
     );
   }
