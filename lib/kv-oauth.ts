@@ -2,7 +2,11 @@ import {
   BATTLENET_OAUTH_AUTHORIZE_URI,
   BATTLENET_OAUTH_TOKEN_URI,
 } from "./consts.ts";
-import { getRequiredEnv, type OAuth2ClientConfig } from "jsr:@deno/kv-oauth";
+import {
+  createHelpers,
+  getRequiredEnv,
+  type OAuth2ClientConfig,
+} from "jsr:@deno/kv-oauth";
 
 // https://jsr.io/@deno/kv-oauth/0.11.0/lib/_kv.ts#L2
 const DENO_KV_PATH_KEY = "DENO_KV_PATH";
@@ -16,7 +20,25 @@ if (
 
 export const kv = await Deno.openKv(path);
 
-export const BATTLENET_SCOPE = ["wow.profile"];
+export const createOAuthHelpers = (req: Request) => {
+  const baseUrl = getBaseUrl(req);
+  console.log(baseUrl);
+  const cookieExpiresSecs = Deno.env.get("ENV") !== "development"
+    ? 60 * 60 * 24 * 7 // 7 days
+    : 0;
+  return createHelpers(
+    createBattleNetOAuthConfig({
+      scope: BATTLENET_SCOPE,
+      redirectUri: `${baseUrl}/callback`,
+    }),
+    {
+      cookieOptions: {
+        expires: cookieExpiresSecs,
+        httpOnly: true,
+      },
+    },
+  );
+};
 
 export const createBattleNetOAuthConfig = (config?: {
   redirectUri?: string;
@@ -31,3 +53,11 @@ export const createBattleNetOAuthConfig = (config?: {
     defaults: { scope: config?.scope },
   };
 };
+
+export const getBaseUrl = (req: Request): string => {
+  const url = new URL(req.url);
+  // Always ensure HTTPS for this kind of project
+  return `https://${url.host}`;
+};
+
+export const BATTLENET_SCOPE = ["wow.profile"];
