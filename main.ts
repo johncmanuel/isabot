@@ -1,4 +1,9 @@
-import { createOAuthHelpers, kv, PlayerSchema } from "./lib/kv-oauth.ts";
+import {
+  createOAuthHelpers,
+  kv,
+  kvKeys,
+  PlayerSchema,
+} from "./lib/kv-oauth.ts";
 import { BattleNetClient, getClientCredentials } from "./lib/bnet.ts";
 import { getExpirationDate } from "./lib/utils.ts";
 import { GUILD_NAME, GUILD_REALM } from "./lib/consts.ts";
@@ -14,6 +19,12 @@ const handler = async (req: Request) => {
   switch (pathname) {
     case "/": {
       const sessionId = await getSessionId(req);
+
+      // Test KV
+      // const r = kv.list<PlayerSchema>({ prefix: ["players", "info"] });
+      // const k = [];
+      // for await (const res of r) k.push(res);
+      // console.log(k);
 
       if (sessionId) {
         console.log("Session ID:", sessionId);
@@ -43,7 +54,7 @@ const handler = async (req: Request) => {
       const { sub, battletag } = await client.getAccountUserInfo();
       // see more on secondary keys/indices
       // https://docs.deno.com/deploy/kv/manual/#improve-querying-with-secondary-indexes
-      const key = ["players", sub, "info"];
+      const key = kvKeys.info.concat(sub);
       const player: PlayerSchema = {
         // Since the player's battle tag will be public, remove the discriminator (is that what u call it?)
         // so they don't get spammed to death by bots selling gold
@@ -105,9 +116,9 @@ const handler = async (req: Request) => {
           },
         }))
       );
-      console.log("Player characters in guild:", playerCharacters);
+      // console.log("Player characters in guild:", playerCharacters);
 
-      const characterKey = ["players", sub, "characters"];
+      const characterKey = kvKeys.characters.concat(sub);
       const res2 = await kv.atomic().check({
         key: characterKey,
         versionstamp: null,
@@ -128,7 +139,7 @@ const handler = async (req: Request) => {
       const totalNumMounts = mounts.mounts.length;
 
       // Store in KV
-      const mountKey = ["players", sub, "mounts"];
+      const mountKey = kvKeys.mounts.concat(sub);
       const res3 = await kv.atomic().check({
         key: mountKey,
         versionstamp: null,

@@ -20,6 +20,13 @@ if (
 
 export const kv = await Deno.openKv(path);
 
+// When interacting with these keys, append the player's ID at the end.
+export const kvKeys = {
+  "info": ["players", "info"],
+  "characters": ["players", "characters"],
+  "mounts": ["players", "mounts"],
+};
+
 // Logged in player schema for KV
 export interface PlayerSchema {
   battleTag: string;
