@@ -1,6 +1,10 @@
 import { LeaderboardEntry, MountStats, Player } from "./types.d.ts";
 import { kv, kvKeys, PlayerSchema } from "../lib/kv-oauth.ts";
 import { GUILD_NAME } from "../lib/consts.ts";
+import {
+  APIEmbed,
+  RESTPostAPIWebhookWithTokenJSONBody,
+} from "npm:discord-api-types/v10";
 
 export class Leaderboard {
   public static async createEntry(): Promise<LeaderboardEntry> {
@@ -73,7 +77,6 @@ export class Leaderboard {
     return entries;
   }
 
-  // TODO: Fix table formatting to be mobile friendly
   public static async sendMountLBtoDiscord(
     webhookUrl: string,
     entry: LeaderboardEntry,
@@ -102,26 +105,34 @@ export class Leaderboard {
 
     sortedRankings.forEach((ranking) => {
       const name = ranking.playerName.padEnd(longestNameLength);
-      const value = ranking.value.toString().padStart(10); // Adjust for alignment
+      const value = ranking.value.toString().padStart(10);
 
       tableContent += `${name} |${value}\n`;
     });
     tableContent += "```\n";
     tableContent += `Want to join in? Sign up at ${websiteUrl}`;
 
-    const payload = {
-      embeds: [{
-        title: `🏆 **Mount Collection Leaderboard** for ${
-          new Date(entry.date_added).toLocaleDateString()
-        }`,
-        description: tableContent,
-        color: 0x00ff00, // Green color
-        footer: {
-          text: `Guild: ${GUILD_NAME}`,
-        },
-      }],
+    const mountEmbed: APIEmbed = {
+      title: `🏆 **Mount Collection Leaderboard** for ${
+        new Date(entry.date_added).toLocaleDateString()
+      }`,
+      description: tableContent,
+      color: 0x00ff00, // Green color
+      footer: {
+        text: `Guild: ${GUILD_NAME}`,
+      },
+    };
+    const payload: RESTPostAPIWebhookWithTokenJSONBody = {
+      embeds: [mountEmbed],
     };
 
+    await Leaderboard.sendWebhookRequest(webhookUrl, payload);
+  }
+
+  private static async sendWebhookRequest(
+    webhookUrl: string,
+    payload: RESTPostAPIWebhookWithTokenJSONBody,
+  ) {
     try {
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -135,9 +146,9 @@ export class Leaderboard {
         throw new Error(`Failed to send to Discord: ${response.statusText}`);
       }
 
-      console.log("Successfully sent leaderboard to Discord");
+      console.log("Successfully sent request to Discord webhook");
     } catch (error) {
-      console.error("Error sending leaderboard to Discord:", error);
+      console.error("Error sending request to Discord webhook:", error);
       throw error;
     }
   }

@@ -80,8 +80,12 @@ export const updateAllPlayersData = async () => {
 Deno.cron("Create and send new leaderboard entry", "0 20 * * SUN", async () => {
   console.log("Creating new leaderboard entry...");
   const entry = await Leaderboard.createEntry();
-  console.log("Created new leaderboard entry");
-  // Send to discord webhook
+  console.log("Created new leaderboard entry, sending to webhook");
+  await Leaderboard.sendMountLBtoDiscord(
+    Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+    entry,
+    `${Deno.env.get("BASE_URL")}/signin`,
+  );
 });
 
 const handler = async (req: Request) => {
@@ -110,11 +114,12 @@ const handler = async (req: Request) => {
       if (!accessToken) {
         console.error("No access token found");
         return response;
+      } else if (!expiresIn) {
+        console.error("No expiration date found");
+        return response;
       }
-      // console.log("Access token:", accessToken, "expires in:", expiresIn);
 
       const expiresInDate = Math.floor(getExpirationDate(expiresIn));
-
       const client = new BattleNetClient(accessToken);
 
       // insert user into KV
