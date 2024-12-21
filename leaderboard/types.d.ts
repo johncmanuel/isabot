@@ -11,7 +11,7 @@ interface MountStats {
 //   bg_wins: number;
 // }
 
-export interface Leaderboard {
+export interface LeaderboardEntry {
   entry_id: string;
   players: {
     [playerId: string]: Player;

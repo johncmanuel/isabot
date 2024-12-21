@@ -1,1 +1,0 @@
-const uuid = crypto.randomUUID();

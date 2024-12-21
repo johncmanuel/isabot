@@ -7,6 +7,7 @@ import {
 import { BattleNetClient, getClientCredentials } from "./lib/bnet.ts";
 import { getExpirationDate } from "./lib/utils.ts";
 import { GUILD_NAME, GUILD_REALM } from "./lib/consts.ts";
+import { Leaderboard } from "./leaderboard/lb.ts";
 
 // TODO: Update KV database weekly to remove inactive players and update active players in the guild using a Deno Cron
 
@@ -21,10 +22,7 @@ const handler = async (req: Request) => {
       const sessionId = await getSessionId(req);
 
       // Test KV
-      // const r = kv.list<PlayerSchema>({ prefix: ["players", "info"] });
-      // const k = [];
-      // for await (const res of r) k.push(res);
-      // console.log(k);
+      // await Leaderboard.createEntry();
 
       if (sessionId) {
         console.log("Session ID:", sessionId);
