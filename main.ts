@@ -16,6 +16,7 @@ import {
 import { getExpirationDate } from "./lib/utils.ts";
 import { GUILD_REALM, GUILD_SLUG_NAME } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
+import { dummyLeaderboardEntry } from "./leaderboard/dummyData.ts";
 
 // Order of Deno Cron executions
 // 1. Update Guild Data
@@ -223,12 +224,12 @@ const handler = async (req: Request) => {
     case "/test":
       if (Deno.env.get("ENVIRONMENT") !== "production") {
         // await updateGuildData();
-        // await Leaderboard.sendMountLBtoDiscord(
-        //   Deno.env.get("DISCORD_WEBHOOK_URL") as string,
-        //   await Leaderboard.getLatestEntry(),
-        //   `${getBaseUrl(req)}/signin`,
-        // );
-        await updateAllPlayersData();
+        await Leaderboard.sendMountLBtoDiscord(
+          Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+          dummyLeaderboardEntry,
+          `${getBaseUrl(req)}/signin`,
+        );
+        // await updateAllPlayersData();
         return new Response("Updated guild data, other stuff too");
       }
       return new Response("Not found", { status: 404 });

@@ -89,21 +89,25 @@ export class Leaderboard {
     // Sorted in descending order
     const sortedRankings = mountRankings.sort((a, b) => b.value - a.value);
 
+    const longestNameLength = Math.max(
+      ...sortedRankings.map((ranking) => ranking.playerName.length),
+    );
+
     // Create table headers
     let tableContent = "```\n";
-    tableContent += "Rank  Player                    Mounts\n";
-    tableContent += "----------------------------------------\n";
+    tableContent += `${
+      "Battletag".padEnd(longestNameLength)
+    } | Number of Mounts\n`;
+    tableContent += `${"-".repeat(longestNameLength)}-|-----------------\n`;
 
-    sortedRankings.forEach((ranking, index) => {
-      const rank = (index + 1).toString().padEnd(5);
-      const name = ranking.playerName.padEnd(25);
-      const value = ranking.value.toString().padStart(5);
+    sortedRankings.forEach((ranking) => {
+      const name = ranking.playerName.padEnd(longestNameLength);
+      const value = ranking.value.toString().padStart(10); // Adjust for alignment
 
-      tableContent += `${rank}${name}${value}\n`;
+      tableContent += `${name} |${value}\n`;
     });
-
     tableContent += "```\n";
-    tableContent += `Want to join in? Login at ${websiteUrl}`;
+    tableContent += `Want to join in? Sign up at ${websiteUrl}`;
 
     const payload = {
       embeds: [{
