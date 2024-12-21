@@ -5,8 +5,10 @@ import {
   BATTLENET_OAUTH_URL,
   BATTLENET_REGION,
   BATTLENET_URL,
+  GUILD_REALM,
+  GUILD_SLUG_NAME,
 } from "./consts.ts";
-import { kv } from "./kv-oauth.ts";
+import { kv, kvKeys } from "./kv-oauth.ts";
 import { getExpirationDate, isTokenExpired } from "./utils.ts";
 
 interface RequestOptions {
@@ -365,4 +367,41 @@ export const getClientCredentials = async (): Promise<
     return clientCredentials;
   }
   return clientCredentialsInKV.value;
+};
+
+export const updateGuildData = async () => {
+  console.log("Starting weekly guild data update...");
+
+  const { access_token } = await getClientCredentials();
+  if (!access_token) {
+    throw new Error("Failed to get access token");
+  }
+
+  // Create client and fetch new guild data
+  const client = new BattleNetClient(access_token);
+  if (!client) {
+    throw new Error("Failed to create BattleNet client");
+  }
+  const newGuildData = await client.getGuildRoster(
+    access_token,
+    GUILD_REALM,
+    GUILD_SLUG_NAME,
+  );
+  if (!newGuildData) {
+    throw new Error("Failed to get new guild data");
+  }
+
+  const newGuildMemberIds = new Set(
+    newGuildData.members.map((member) => member.character.id),
+  );
+
+  console.log("Received new guild data, now inserting into KV...");
+
+  // Ensure to overwrite the old guild data in KV with new data
+  const kvGuildKey = [...kvKeys.guild, GUILD_SLUG_NAME];
+  const res = await kv.atomic().set(kvGuildKey, newGuildMemberIds).commit();
+  if (!res.ok) {
+    throw new Error("Failed to update guild data in KV");
+  }
+  console.log("Updated guild data in KV");
 };

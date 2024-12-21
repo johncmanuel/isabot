@@ -1,52 +1,40 @@
 import {
   createOAuthHelpers,
+  getBaseUrl,
   kv,
   kvKeys,
   PlayerSchema,
 } from "./lib/kv-oauth.ts";
-import { BattleNetClient, getClientCredentials } from "./lib/bnet.ts";
+import {
+  BattleNetClient,
+  getClientCredentials,
+  updateGuildData,
+} from "./lib/bnet.ts";
 import { getExpirationDate } from "./lib/utils.ts";
-import { GUILD_NAME, GUILD_REALM } from "./lib/consts.ts";
+import { GUILD_REALM, GUILD_SLUG_NAME } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
 
-// TODO: Update KV database weekly to remove inactive players and update active players in the guild using a Deno Cron
-Deno.cron("Update Guild Data", "0 18 * * SUN", async () => {
+// Order of Deno Cron executions
+// 1. Update Guild Data
+// 2. Update all KV players' data w/ client credentials token
+// 3. Create and send new leaderboard entry to Discord webhook
+
+// Send at 10 AM PST on Saturday
+Deno.cron("Update Guild Data", "0 18 * * SAT", async () => {
   await updateGuildData();
 });
-export const updateGuildData = async () => {
-  console.log("Starting weekly guild data update...");
 
-  const { access_token } = await getClientCredentials();
-  if (!access_token) {
-    throw new Error("Failed to get access token");
-  }
+// Send at 5 PM PST on Saturday
+Deno.cron("Update all KV players' data", "0 0 * * SUN", async () => {
+});
 
-  // Create client and fetch new guild data
-  const client = new BattleNetClient(access_token);
-  if (!client) {
-    throw new Error("Failed to create BattleNet client");
-  }
-  const newGuildData = await client.getGuildRoster(
-    access_token,
-    GUILD_REALM,
-    GUILD_NAME,
-  );
-  if (!newGuildData) {
-    throw new Error("Failed to get new guild data");
-  }
-
-  const newGuildMemberIds = new Set(
-    newGuildData.members.map((member) => member.character.id),
-  );
-
-  // Ensure to overwrite the old guild data in KV with new data
-  const kvGuildKey = [...kvKeys.guild, GUILD_NAME];
-  const res = await kv.atomic().set(kvGuildKey, newGuildMemberIds).commit();
-  if (!res.ok) {
-    throw new Error("Failed to update guild data in KV");
-  }
-  console.log("Updated guild data in KV");
-};
+// Send at 12 PM PST on Sunday
+Deno.cron("Create and send new leaderboard entry", "0 20 * * SUN", async () => {
+  console.log("Creating new leaderboard entry...");
+  const entry = await Leaderboard.createEntry();
+  console.log("Created new leaderboard entry");
+  // Send to discord webhook
+});
 
 const handler = async (req: Request) => {
   const { pathname } = new URL(req.url);
@@ -168,10 +156,21 @@ const handler = async (req: Request) => {
       return new Response(JSON.stringify(await Leaderboard.getLatestEntry()));
     case "/lb":
       return new Response(JSON.stringify(await Leaderboard.getEntries()));
-    case "/protected":
-      return await getSessionId(req) === undefined
-        ? new Response("Unauthorized", { status: 401 })
-        : new Response("You are allowed");
+    // case "/protected":
+    //   return await getSessionId(req) === undefined
+    //     ? new Response("Unauthorized", { status: 401 })
+    //     : new Response("You are allowed");
+    case "/test":
+      if (Deno.env.get("ENVIRONMENT") !== "production") {
+        // await updateGuildData();
+        await Leaderboard.sendMountLBtoDiscord(
+          Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+          await Leaderboard.getLatestEntry(),
+          `${getBaseUrl(req)}/signin`,
+        );
+        return new Response("Updated guild data, other stuff too");
+      }
+      return new Response("Not found", { status: 404 });
     default:
       return new Response("Not Found", { status: 404 });
   }
@@ -185,7 +184,7 @@ const getGuildData = async (
   client: BattleNetClient,
   clientCredentialsToken: string,
 ) => {
-  const guildKey = [...kvKeys.guild, GUILD_NAME];
+  const guildKey = [...kvKeys.guild, GUILD_SLUG_NAME];
   const guildKV = await kv.get<GuildMemberIds>(guildKey);
 
   if (guildKV.value !== null && guildKV.versionstamp !== null) {
@@ -197,7 +196,7 @@ const getGuildData = async (
   const guild = await client.getGuildRoster(
     clientCredentialsToken,
     GUILD_REALM,
-    GUILD_NAME,
+    GUILD_SLUG_NAME,
   );
 
   // fun fact: sets can be stored in KV

@@ -33,7 +33,10 @@ export const BATTLENET_URL: string =
   `https://${BATTLENET_REGION}.api.blizzard.com`;
 
 // Slug name for AR Club
-export const GUILD_NAME: string = "ar-club";
+export const GUILD_SLUG_NAME: string = "ar-club";
+
+// Nicer form of the guild name
+export const GUILD_NAME: string = "AR Club";
 
 // Slug name for AR Club's realm, Bronzebeard-Shandris
 export const GUILD_REALM = ["shandris", "bronzebeard"];
