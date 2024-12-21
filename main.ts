@@ -20,10 +20,6 @@ const handler = async (req: Request) => {
   switch (pathname) {
     case "/": {
       const sessionId = await getSessionId(req);
-
-      // Test KV
-      // await Leaderboard.createEntry();
-
       if (sessionId) {
         console.log("Session ID:", sessionId);
         return new Response(`hi welcome to isabot 2.0, ${sessionId}`);
@@ -152,6 +148,10 @@ const handler = async (req: Request) => {
 
       return response;
     }
+    case "/lb/latest":
+      return new Response(JSON.stringify(await Leaderboard.getLatestEntry()));
+    case "/lb":
+      return new Response(JSON.stringify(await Leaderboard.getEntries()));
     case "/protected":
       return await getSessionId(req) === undefined
         ? new Response("Unauthorized", { status: 401 })

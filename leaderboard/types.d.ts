@@ -1,9 +1,9 @@
-interface Player {
+export interface Player {
   battletag: string;
   id: string;
 }
 
-interface MountStats {
+export interface MountStats {
   number_of_mounts: number;
 }
 
