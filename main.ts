@@ -26,6 +26,15 @@ Deno.cron("Update Guild Data", "0 18 * * SAT", async () => {
 
 // Send at 5 PM PST on Saturday
 Deno.cron("Update all KV players' data", "0 0 * * SUN", async () => {
+  // Update mounts for all players using client credentials by first
+  // iterating through all characters for a particular player and
+  // then updating the total number of mounts (for example)
+  const { access_token } = await getClientCredentials();
+  const client = new BattleNetClient(access_token);
+  const iter = kv.list({ prefix: kvKeys.info });
+  for await (const { key, value } of iter) {
+    const player = value as PlayerSchema;
+  }
 });
 
 // Send at 12 PM PST on Sunday
@@ -180,7 +189,7 @@ export type GuildMemberIds = Set<number>;
 
 // Only contains IDs of all the characters in the guild, which are
 // used for comparisons with a user's characters
-const getGuildData = async (
+export const getGuildData = async (
   client: BattleNetClient,
   clientCredentialsToken: string,
 ) => {
