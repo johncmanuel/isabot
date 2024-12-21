@@ -1,0 +1,12 @@
+# Process compose for starting django
+version: "0.5"
+
+processes:
+  deno:
+    command: deno task dev
+    availability:
+      restart: "always"
+  ngrok:
+    command: deno task ngrok
+    availability:
+      restart: "always"
