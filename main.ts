@@ -1,8 +1,11 @@
 import {
   createOAuthHelpers,
   getBaseUrl,
+  GuildMemberIds,
   kv,
   kvKeys,
+  PlayerCharacterKV,
+  PlayerCharactersKV,
   PlayerSchema,
 } from "./lib/kv-oauth.ts";
 import {
@@ -32,13 +35,43 @@ Deno.cron("Update all KV players data", "0 0 * * SUN", async () => {
   await updateAllPlayersData();
 });
 
+// Get highest number of mounts for a player
 export const updateAllPlayersData = async () => {
   console.log("Updating all players data...");
   const { access_token } = await getClientCredentials();
   const client = new BattleNetClient(access_token);
-  const charIter = kv.list({ prefix: kvKeys.characters });
-  for await (const { key, value } of charIter) {
-    console.log(key, value);
+  const charIter = kv.list<PlayerCharactersKV>({ prefix: kvKeys.characters });
+
+  const getHighestNumMounts = async (char: PlayerCharacterKV) => {
+    const mounts = await client.getCharacterMounts(
+      access_token,
+      char.name,
+      char.realm.slug,
+    );
+    if (mounts === null) return 0;
+    return mounts.mounts.length;
+  };
+
+  const updateMountsInKV = async (playerId: string, totalNumMounts: number) => {
+    const mountKey = kvKeys.mounts.concat(playerId);
+    const m = await kv.atomic().set(mountKey, { totalNumMounts }).commit();
+    if (!m.ok) {
+      console.error("Failed to update mounts for player:", playerId);
+      return;
+    }
+    console.log("Updated mounts for playerId:", playerId);
+  };
+
+  // Iterate through each player in the KV
+  for await (const res of charIter) {
+    const playerId = res.key[res.key.length - 1] as string;
+    let totalNumMounts = 0;
+    for (const char of res.value) {
+      // Update mounts
+      const numMounts = await getHighestNumMounts(char);
+      totalNumMounts = Math.max(totalNumMounts, numMounts);
+    }
+    await updateMountsInKV(playerId, totalNumMounts);
   }
 };
 
@@ -84,7 +117,12 @@ const handler = async (req: Request) => {
       const client = new BattleNetClient(accessToken);
 
       // insert user into KV
-      const { sub, battletag } = await client.getAccountUserInfo();
+      const userinfo = await client.getAccountUserInfo();
+      if (userinfo === null) {
+        console.error("Failed to fetch user info from API");
+        return response;
+      }
+      const { sub, battletag } = userinfo;
       // see more on secondary keys/indices
       // https://docs.deno.com/deploy/kv/manual/#improve-querying-with-secondary-indexes
       const key = kvKeys.info.concat(sub);
@@ -113,6 +151,10 @@ const handler = async (req: Request) => {
       // console.log("Guild:", memberIds);
 
       const data = await client.getAccountWoWProfileSummary();
+      if (data === null) {
+        console.error("Failed to fetch WoW profile summary from API");
+        return response;
+      }
       const playerCharacters = data.wow_accounts.flatMap((account) =>
         account.characters.filter((character) =>
           GUILD_REALM.includes(character.realm.slug)
@@ -148,7 +190,11 @@ const handler = async (req: Request) => {
 
       // Store mount data
       const mounts = await client.getAccountMountsCollection();
-      const totalNumMounts = mounts.mounts.length;
+      let totalNumMounts = 0;
+      if (mounts === null) {
+        console.error("Failed to fetch mounts data from API");
+        totalNumMounts = 0;
+      }
 
       // Store in KV
       const mountKey = kvKeys.mounts.concat(sub);
@@ -177,11 +223,11 @@ const handler = async (req: Request) => {
     case "/test":
       if (Deno.env.get("ENVIRONMENT") !== "production") {
         // await updateGuildData();
-        await Leaderboard.sendMountLBtoDiscord(
-          Deno.env.get("DISCORD_WEBHOOK_URL") as string,
-          await Leaderboard.getLatestEntry(),
-          `${getBaseUrl(req)}/signin`,
-        );
+        // await Leaderboard.sendMountLBtoDiscord(
+        //   Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+        //   await Leaderboard.getLatestEntry(),
+        //   `${getBaseUrl(req)}/signin`,
+        // );
         await updateAllPlayersData();
         return new Response("Updated guild data, other stuff too");
       }
@@ -190,8 +236,6 @@ const handler = async (req: Request) => {
       return new Response("Not Found", { status: 404 });
   }
 };
-
-export type GuildMemberIds = Set<number>;
 
 // Only contains IDs of all the characters in the guild, which are
 // used for comparisons with a user's characters
@@ -213,6 +257,11 @@ export const getGuildData = async (
     GUILD_REALM,
     GUILD_SLUG_NAME,
   );
+
+  if (guild === null) {
+    console.error("Failed to fetch guild data from API, returning empty set");
+    return new Set<number>();
+  }
 
   // fun fact: sets can be stored in KV
   // https://docs.deno.com/deploy/kv/manual/key_space/#values

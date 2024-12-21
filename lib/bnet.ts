@@ -230,7 +230,7 @@ export class BattleNetClient {
       baseUrl = this.baseUrl,
       token = this.accessToken,
     }: RequestOptions,
-  ): Promise<T> {
+  ): Promise<T | null> {
     let url = new URL(`${this.baseUrl}${endpoint}`);
     if (baseUrl) {
       url = new URL(`${baseUrl}${endpoint}`);
@@ -248,28 +248,36 @@ export class BattleNetClient {
     });
 
     if (!response.ok) {
-      throw new Error(
+      console.error(
         `BattleNet API error: ${response.status} ${response.statusText}`,
       );
+      console.error("URL endpoint: ", url);
+      return null;
     }
 
     return response.json();
   }
 
-  public async getAccountWoWProfileSummary(): Promise<WowProfileResponse> {
+  public async getAccountWoWProfileSummary(): Promise<
+    WowProfileResponse | null
+  > {
     return await this.fetch<WowProfileResponse>("/profile/user/wow", {
       namespace: "profile",
     });
   }
 
-  public async getAccountUserInfo(): Promise<BattleNetAccountUserInfoResponse> {
+  public async getAccountUserInfo(): Promise<
+    BattleNetAccountUserInfoResponse | null
+  > {
     return await this.fetch<BattleNetAccountUserInfoResponse>("/userinfo", {
       namespace: "profile",
       baseUrl: this.battleNetOAuthUrl,
     });
   }
 
-  public async getAccountMountsCollection(): Promise<MountsCollectionResponse> {
+  public async getAccountMountsCollection(): Promise<
+    MountsCollectionResponse | null
+  > {
     return await this.fetch<MountsCollectionResponse>(
       "/profile/user/wow/collections/mounts",
       {
@@ -282,7 +290,7 @@ export class BattleNetClient {
     clientCredentialsToken: string,
     characterName: string,
     realmSlug: string,
-  ) {
+  ): Promise<MountsCollectionResponse | null> {
     return await this.fetch(
       `/profile/wow/character/${realmSlug}/${characterName.toLowerCase()}/collections/mounts`,
       {
@@ -296,7 +304,7 @@ export class BattleNetClient {
     clientCredentialsToken: string,
     realmSlug: string | string[],
     guildName: string,
-  ): Promise<GuildRosterResponse> {
+  ): Promise<GuildRosterResponse | null> {
     if (Array.isArray(realmSlug)) {
       // Use the first realm in the list
       realmSlug = realmSlug[0];

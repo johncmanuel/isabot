@@ -20,7 +20,7 @@ if (
 
 export const kv = await Deno.openKv(path);
 
-// Some keys require appending the player's ID at the end.
+// Keys with players as one of primary keys require appending the player's ID at the end.
 export const kvKeys = {
   "info": ["players", "info"],
   "characters": ["players", "characters"],
@@ -28,6 +28,22 @@ export const kvKeys = {
   "leaderboard": ["leaderboard"],
   "guild": ["guild"],
 };
+
+export interface RealmKV {
+  name: string;
+  slug: string;
+  id: number;
+}
+
+export interface PlayerCharacterKV {
+  name: string;
+  id: number;
+  realm: RealmKV;
+}
+
+export type PlayerCharactersKV = PlayerCharacterKV[];
+
+export type GuildMemberIds = Set<number>;
 
 // Logged in player schema for KV
 export interface PlayerSchema {

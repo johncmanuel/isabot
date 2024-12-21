@@ -73,6 +73,7 @@ export class Leaderboard {
     return entries;
   }
 
+  // TODO: Fix table formatting to be mobile friendly
   public static async sendMountLBtoDiscord(
     webhookUrl: string,
     entry: LeaderboardEntry,
