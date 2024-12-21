@@ -10,7 +10,43 @@ import { GUILD_NAME, GUILD_REALM } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
 
 // TODO: Update KV database weekly to remove inactive players and update active players in the guild using a Deno Cron
-// Deno.cron;
+Deno.cron("Update Guild Data", "0 18 * * SUN", async () => {
+  await updateGuildData();
+});
+export const updateGuildData = async () => {
+  console.log("Starting weekly guild data update...");
+
+  const { access_token } = await getClientCredentials();
+  if (!access_token) {
+    throw new Error("Failed to get access token");
+  }
+
+  // Create client and fetch new guild data
+  const client = new BattleNetClient(access_token);
+  if (!client) {
+    throw new Error("Failed to create BattleNet client");
+  }
+  const newGuildData = await client.getGuildRoster(
+    access_token,
+    GUILD_REALM,
+    GUILD_NAME,
+  );
+  if (!newGuildData) {
+    throw new Error("Failed to get new guild data");
+  }
+
+  const newGuildMemberIds = new Set(
+    newGuildData.members.map((member) => member.character.id),
+  );
+
+  // Ensure to overwrite the old guild data in KV with new data
+  const kvGuildKey = [...kvKeys.guild, GUILD_NAME];
+  const res = await kv.atomic().set(kvGuildKey, newGuildMemberIds).commit();
+  if (!res.ok) {
+    throw new Error("Failed to update guild data in KV");
+  }
+  console.log("Updated guild data in KV");
+};
 
 const handler = async (req: Request) => {
   const { pathname } = new URL(req.url);
