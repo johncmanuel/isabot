@@ -10,6 +10,7 @@ import { GUILD_NAME, GUILD_REALM } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
 
 // TODO: Update KV database weekly to remove inactive players and update active players in the guild using a Deno Cron
+// Deno.cron;
 
 const handler = async (req: Request) => {
   const { pathname } = new URL(req.url);
@@ -69,31 +70,10 @@ const handler = async (req: Request) => {
 
       // Get guild roster from KV and compare with the player's characters
       const { access_token } = await getClientCredentials();
-      const guild = await client.getGuildRoster(
-        access_token,
-        GUILD_REALM,
-        GUILD_NAME,
-      );
-      const memberIds = new Set(
-        guild.members.map((member) => member.character.id),
-      );
+      const memberIds = await getGuildData(client, access_token);
+
       // console.log("Guild:", memberIds);
 
-      // Cache the guild in KV
-      // const guildKey = ["guilds", GUILD_NAME, "roster"];
-      // const guildRes = await kv.atomic().check({
-      //   key: guildKey,
-      //   versionstamp: null,
-      // }).set(
-      //   guildKey,
-      //   guild,
-      // ).commit();
-      // if (guildRes.ok) {
-      //   console.log("Guild not yet in the KV, inserting:", guild);
-      // } else {
-      //   console.error("Guild already in the KV");
-      // }
-      //
       const data = await client.getAccountWoWProfileSummary();
       const playerCharacters = data.wow_accounts.flatMap((account) =>
         account.characters.filter((character) =>
@@ -110,7 +90,7 @@ const handler = async (req: Request) => {
           },
         }))
       );
-      // console.log("Player characters in guild:", playerCharacters);
+      console.log("Player characters in guild:", playerCharacters);
 
       const characterKey = kvKeys.characters.concat(sub);
       const res2 = await kv.atomic().check({
@@ -159,6 +139,46 @@ const handler = async (req: Request) => {
     default:
       return new Response("Not Found", { status: 404 });
   }
+};
+
+export type GuildMemberIds = Set<number>;
+
+// Only contains IDs of all the characters in the guild, which are
+// used for comparisons with a user's characters
+const getGuildData = async (
+  client: BattleNetClient,
+  clientCredentialsToken: string,
+) => {
+  const guildKey = [...kvKeys.guild, GUILD_NAME];
+  const guildKV = await kv.get<GuildMemberIds>(guildKey);
+
+  if (guildKV.value !== null && guildKV.versionstamp !== null) {
+    console.log("Found guild data in KV");
+    return guildKV.value;
+  }
+
+  console.log("Guild not in KV, fetching from API...");
+  const guild = await client.getGuildRoster(
+    clientCredentialsToken,
+    GUILD_REALM,
+    GUILD_NAME,
+  );
+
+  // fun fact: sets can be stored in KV
+  // https://docs.deno.com/deploy/kv/manual/key_space/#values
+  const guildMemberIds = new Set(
+    guild.members.map((member) => member.character.id),
+  );
+
+  const res = await kv.atomic().set(guildKey, guildMemberIds).commit();
+  if (!res.ok) {
+    console.error(
+      "Failed to store guild data in KV cache, returning data from API response instead",
+    );
+  } else {
+    console.log("Stored guild data in KV cache");
+  }
+  return guildMemberIds;
 };
 
 if (import.meta.main) {

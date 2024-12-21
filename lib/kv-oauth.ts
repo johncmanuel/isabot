@@ -26,6 +26,7 @@ export const kvKeys = {
   "characters": ["players", "characters"],
   "mounts": ["players", "mounts"],
   "leaderboard": ["leaderboard"],
+  "guild": ["guild"],
 };
 
 // Logged in player schema for KV
