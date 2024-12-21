@@ -25,17 +25,22 @@ Deno.cron("Update Guild Data", "0 18 * * SAT", async () => {
 });
 
 // Send at 5 PM PST on Saturday
-Deno.cron("Update all KV players' data", "0 0 * * SUN", async () => {
+Deno.cron("Update all KV players data", "0 0 * * SUN", async () => {
   // Update mounts for all players using client credentials by first
   // iterating through all characters for a particular player and
   // then updating the total number of mounts (for example)
+  await updateAllPlayersData();
+});
+
+export const updateAllPlayersData = async () => {
+  console.log("Updating all players data...");
   const { access_token } = await getClientCredentials();
   const client = new BattleNetClient(access_token);
-  const iter = kv.list({ prefix: kvKeys.info });
-  for await (const { key, value } of iter) {
-    const player = value as PlayerSchema;
+  const charIter = kv.list({ prefix: kvKeys.characters });
+  for await (const { key, value } of charIter) {
+    console.log(key, value);
   }
-});
+};
 
 // Send at 12 PM PST on Sunday
 Deno.cron("Create and send new leaderboard entry", "0 20 * * SUN", async () => {
@@ -177,6 +182,7 @@ const handler = async (req: Request) => {
           await Leaderboard.getLatestEntry(),
           `${getBaseUrl(req)}/signin`,
         );
+        await updateAllPlayersData();
         return new Response("Updated guild data, other stuff too");
       }
       return new Response("Not found", { status: 404 });

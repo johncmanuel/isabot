@@ -278,11 +278,16 @@ export class BattleNetClient {
     );
   }
 
-  public async getCharacterMounts(characterName: string, realmSlug: string) {
+  public async getCharacterMounts(
+    clientCredentialsToken: string,
+    characterName: string,
+    realmSlug: string,
+  ) {
     return await this.fetch(
-      `/profile/user/wow/character/${realmSlug}/${characterName.toLowerCase()}/collections/mounts`,
+      `/profile/wow/character/${realmSlug}/${characterName.toLowerCase()}/collections/mounts`,
       {
         namespace: "profile",
+        token: clientCredentialsToken,
       },
     );
   }
