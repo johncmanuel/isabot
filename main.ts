@@ -99,9 +99,11 @@ const handler = async (req: Request) => {
       const sessionId = await getSessionId(req);
       if (sessionId) {
         console.log("Session ID:", sessionId);
-        return new Response(`hi welcome to isabot 2.0, ${sessionId}`);
+        return new Response(
+          `you're signed in! welcome to isabot 2.0! sessionId: ${sessionId}`,
+        );
       }
-      return new Response("hi welcome to isabot 2.0");
+      return new Response("hi welcome to isabot 2.0!");
     }
     case "/signin":
       return await signIn(req);
@@ -129,6 +131,8 @@ const handler = async (req: Request) => {
         return response;
       }
       const { sub, battletag } = userinfo;
+      console.log("Player battletag:", battletag);
+
       // see more on secondary keys/indices
       // https://docs.deno.com/deploy/kv/manual/#improve-querying-with-secondary-indexes
       const key = kvKeys.info.concat(sub);
@@ -145,7 +149,7 @@ const handler = async (req: Request) => {
         player,
       ).commit();
       if (res.ok) {
-        console.log("Player not yet in the KV, inserting:", player);
+        console.log("Player not yet in the KV, inserting them now.");
       } else {
         console.error("Player already in the KV");
       }
@@ -227,7 +231,7 @@ const handler = async (req: Request) => {
     //     ? new Response("Unauthorized", { status: 401 })
     //     : new Response("You are allowed");
     case "/test":
-      if (Deno.env.get("ENVIRONMENT") !== "production") {
+      if (Deno.env.get("ENV") === "dev") {
         // await updateGuildData();
         await Leaderboard.sendMountLBtoDiscord(
           Deno.env.get("DISCORD_WEBHOOK_URL") as string,

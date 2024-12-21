@@ -373,7 +373,7 @@ export const getClientCredentials = async (): Promise<
       clientCredentials,
     ).commit();
     if (res1.ok) {
-      console.log("Client credentials inserted:", clientCredentials);
+      console.log("Client credentials inserted!");
     } else {
       console.error("Client credentials already in the KV");
     }
