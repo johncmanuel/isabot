@@ -54,8 +54,7 @@ export interface PlayerSchema {
 
 export const createOAuthHelpers = (req: Request) => {
   const baseUrl = getBaseUrl(req);
-  console.log(baseUrl);
-  const cookieExpiresSecs = Deno.env.get("ENV") !== "development"
+  const cookieExpiresSecs = Deno.env.get("ENV") !== "dev"
     ? 60 * 60 * 24 * 7 // 7 days
     : 0;
   return createHelpers(
