@@ -40,13 +40,14 @@ export const createDiscordApp = (
   path: string,
 ) => {
   return createApp({
+    // https://jsr.io/@discord-applications/app/doc/~/AppHandlerOptions
     schema: isabotSchema,
     applicationID: discordApplicationID,
     publicKey: discordPublicKey,
     token: discordToken,
     register: true,
     path: path,
-    // prob not needed
+    // prob not needed since it's handled by the other handler, but leaving it here
     invite: { path: "/invite", scopes: ["applications.commands"] },
   }, {
     cmd: {
@@ -104,7 +105,7 @@ export const sendMsg = (message: string): APIInteractionResponse => {
   };
 };
 
-function formatLeaderboardData(entries: LeaderboardEntry[]): string {
+export const formatLeaderboardData = (entries: LeaderboardEntry[]): string => {
   const DISCORD_MAX_LENGTH = 2000;
 
   if (!entries || entries.length === 0) {
@@ -144,14 +145,13 @@ function formatLeaderboardData(entries: LeaderboardEntry[]): string {
         lines.push(`   🐎 Mounts: ${playerMounts}`);
       });
     }
-
     return lines.join("\n");
   });
 
   return formattedEntries.join("\n\n").slice(0, DISCORD_MAX_LENGTH);
-}
+};
 
-const handleLeaderboardCommand = (
+export const handleLeaderboardCommand = (
   entries: LeaderboardEntry[],
 ): APIInteractionResponse => {
   const formattedMessage = formatLeaderboardData(entries);
