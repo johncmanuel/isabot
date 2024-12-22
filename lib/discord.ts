@@ -1,5 +1,6 @@
 import type { AppSchema } from "@discord-applications/app";
 import {
+  APIInteractionResponse,
   createApp,
   InteractionResponseType,
   MessageFlags,
@@ -22,6 +23,7 @@ export const isabotSchema = {
           },
           all: {
             description: "Get all leaderboard entries",
+            // Leave options empty if no options needed
             options: {},
           },
         },
@@ -30,29 +32,56 @@ export const isabotSchema = {
   },
 } as const satisfies AppSchema;
 
-export const discordAppHandler = createApp({
-  schema: isabotSchema,
-  applicationID: Deno.env.get("DISCORD_APP_ID")!,
-  publicKey: Deno.env.get("DISCORD_PUBLIC_KEY")!,
-  token: Deno.env.get("DISCORD_TOKEN")!,
-  register: true,
-  invite: { path: "/invite", scopes: ["applications.commands"] },
-}, {
-  lb: {
-    // @ts-ignore: ignore weird typing error with discord app library
-    latest: async (_interaction) => {
-      const entry = await Leaderboard.getLatestEntry();
-      return sendMsg(formatLeaderboardData(entry));
+export const createDiscordApp = (
+  discordApplicationID: string,
+  discordPublicKey: string,
+  discordToken: string,
+  path: string,
+) => {
+  return createApp({
+    schema: isabotSchema,
+    applicationID: discordApplicationID,
+    publicKey: discordPublicKey,
+    token: discordToken,
+    register: true,
+    path: path,
+    invite: { path: "/invite", scopes: ["applications.commands"] },
+  }, {
+    lb: {
+      // @ts-ignore: ignore weird typing error with discord app library
+      latest: async (_interaction) => {
+        const entry = await Leaderboard.getLatestEntry();
+        return sendMsg(formatLeaderboardData(entry));
+      },
+      // @ts-ignore: ignore weird typing error with discord app library
+      all: async (_interaction) => {
+        const entries = await Leaderboard.getEntries();
+        return sendMsg(entries.map(formatLeaderboardData).join("\n"));
+      },
     },
-    // @ts-ignore: ignore weird typing error with discord app library
-    all: async (_interaction) => {
-      const entries = await Leaderboard.getEntries();
-      return sendMsg(entries.map(formatLeaderboardData).join("\n"));
-    },
-  },
-});
+  });
+};
 
-export const sendMsg = (message: string) => {
+// For intercepting errors and sending them as Discord ephemeral messages
+// Source: https://github.com/acmcsufoss/lc-dailies/blob/main/lib/api/discord/app.ts#L127
+// Modified slightly to use sendMsg() for structuring the payload
+export function withErrorResponse(
+  oldHandle: (request: Request) => Promise<Response>,
+): (request: Request) => Promise<Response> {
+  return async function handle(request: Request): Promise<Response> {
+    return await oldHandle(request)
+      .catch((error) => {
+        if (!(error instanceof Error)) {
+          throw error;
+        }
+        return Response.json(
+          sendMsg(`Error: ${error.message}`),
+        );
+      });
+  };
+}
+
+export const sendMsg = (message: string): APIInteractionResponse => {
   return {
     type: InteractionResponseType.ChannelMessageWithSource,
     data: {
