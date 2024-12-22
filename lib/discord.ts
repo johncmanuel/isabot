@@ -22,11 +22,12 @@ export const isabotSchema = {
             // Leave options empty if no options needed
             options: {},
           },
-          all: {
-            description: "Get all leaderboard entries",
-            // Leave options empty if no options needed
-            options: {},
-          },
+          // TODO: Implement other slash commands?
+          // all: {
+          //   description: "Get all leaderboard entries",
+          //   // Leave options empty if no options needed
+          //   options: {},
+          // },
         },
       },
     },
@@ -60,16 +61,16 @@ export const createDiscordApp = (
         return handleLeaderboardCommand([entry]);
       },
       // @ts-ignore: ignore weird typing error with discord app library
-      all: async (_interaction) => {
-        if (Deno.env.get("ENV") === "dev") {
-          return handleLeaderboardCommand([
-            dummyLeaderboardEntry,
-            dummyLeaderboardEntry,
-          ]);
-        }
-        const entries = await Leaderboard.getEntries();
-        return handleLeaderboardCommand(entries);
-      },
+      // all: async (_interaction) => {
+      //   if (Deno.env.get("ENV") === "dev") {
+      //     return handleLeaderboardCommand([
+      //       dummyLeaderboardEntry,
+      //       dummyLeaderboardEntry,
+      //     ]);
+      //   }
+      //   const entries = await Leaderboard.getEntries();
+      //   return handleLeaderboardCommand(entries);
+      // },
     },
   });
 };

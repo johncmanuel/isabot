@@ -200,10 +200,7 @@ const handler = async (req: Request) => {
             }))
           );
 
-          const res2 = await kv.atomic().check({
-            key: charKey,
-            versionstamp: null,
-          })
+          const res2 = await kv.atomic()
             .set(charKey, playerCharacters)
             .commit();
           if (res2.ok) {
