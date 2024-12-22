@@ -51,4 +51,4 @@ Invites Isabot to your Discord server.
 ## Current Limitations
 
 The only way to update your list of characters with Isabot is to sign in again with your Battle.net account. Due to the limitations of the Blizzard API, there is no way to 
-update data automatically. 
+update your character list automatically. 
