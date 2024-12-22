@@ -159,9 +159,12 @@ const handler = async (req: Request) => {
 
       // check if player's characters already exist. insert if not
       const charKey = kvKeys.characters.concat(sub);
-      const charKV = await kv.get<PlayerCharacterKV>(charKey);
+      const charKV = await kv.get<PlayerCharacterKV[]>(charKey);
 
-      if (charKV.value !== null && charKV.versionstamp !== null) {
+      if (
+        charKV.value !== null && charKV.versionstamp !== null &&
+        charKV.value.length > 0
+      ) {
         console.log("Found player characters in KV, no need to fetch from API");
       } else {
         const { access_token } = await getClientCredentials();
