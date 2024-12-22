@@ -17,7 +17,11 @@ import { getExpirationDate } from "./lib/utils.ts";
 import { GUILD_REALM, GUILD_SLUG_NAME } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
 import { dummyLeaderboardEntry } from "./leaderboard/dummyData.ts";
-import { createDiscordApp, withErrorResponse } from "./lib/discord.ts";
+import {
+  createDiscordApp,
+  discordInviteUrl,
+  withErrorResponse,
+} from "./lib/discord.ts";
 
 // Order of Deno Cron executions
 // 1. Update Guild Data
@@ -261,6 +265,10 @@ const handler = async (req: Request) => {
       return new Response("Not found", { status: 404 });
     case "/discord":
       return withErrorResponse(app)(req);
+    case "/invite":
+      return Response.redirect(
+        discordInviteUrl(Deno.env.get("DISCORD_APPLICATION_ID") as string),
+      );
     default:
       return new Response("Not Found", { status: 404 });
   }

@@ -7,13 +7,14 @@ import {
 } from "@discord-applications/app";
 import { Leaderboard } from "../leaderboard/lb.ts";
 import { LeaderboardEntry } from "../leaderboard/types.d.ts";
+import { dummyLeaderboardEntry } from "../leaderboard/dummyData.ts";
 
 export const isabotSchema = {
   chatInput: {
-    name: "isabot",
-    description: "Very cool commands for isabot",
+    name: "lb",
+    description: "Leaderboard commands for isabot",
     groups: {
-      lb: {
+      cmd: {
         description: "Leaderboard commands",
         subcommands: {
           latest: {
@@ -45,18 +46,28 @@ export const createDiscordApp = (
     token: discordToken,
     register: true,
     path: path,
+    // prob not needed
     invite: { path: "/invite", scopes: ["applications.commands"] },
   }, {
-    lb: {
+    cmd: {
       // @ts-ignore: ignore weird typing error with discord app library
       latest: async (_interaction) => {
+        if (Deno.env.get("ENV") === "dev") {
+          return handleLeaderboardCommand([dummyLeaderboardEntry]);
+        }
         const entry = await Leaderboard.getLatestEntry();
-        return sendMsg(formatLeaderboardData(entry));
+        return handleLeaderboardCommand([entry]);
       },
       // @ts-ignore: ignore weird typing error with discord app library
       all: async (_interaction) => {
+        if (Deno.env.get("ENV") === "dev") {
+          return handleLeaderboardCommand([
+            dummyLeaderboardEntry,
+            dummyLeaderboardEntry,
+          ]);
+        }
         const entries = await Leaderboard.getEntries();
-        return sendMsg(entries.map(formatLeaderboardData).join("\n"));
+        return handleLeaderboardCommand(entries);
       },
     },
   });
@@ -93,19 +104,61 @@ export const sendMsg = (message: string): APIInteractionResponse => {
   };
 };
 
-export const formatLeaderboardData = (entry: LeaderboardEntry): string => {
-  const lines: string[] = [];
+function formatLeaderboardData(entries: LeaderboardEntry[]): string {
+  const DISCORD_MAX_LENGTH = 2000;
 
-  lines.push(`🏆 Leaderboard Entry: ${entry.entry_id}`);
-  lines.push(`📅 Date: ${new Date(entry.date_added).toLocaleDateString()}\n`);
+  if (!entries || entries.length === 0) {
+    return "❌ No leaderboard entries available";
+  }
 
-  Object.entries(entry.players).forEach(([playerId, player]) => {
-    const playerMounts = entry.mounts[playerId]?.number_of_mounts ?? 0;
-    lines.push(`👤 ${player.battletag}`);
-    lines.push(`   🐎 Mounts: ${playerMounts}`);
+  const formattedEntries = entries.map((entry) => {
+    if (!entry || Object.keys(entry).length === 0) {
+      return "❌ No leaderboard entry found";
+    }
+
+    const lines: string[] = [];
+
+    lines.push(`🏆 Leaderboard Entry: ${entry.entry_id ?? "Unknown"}`);
+    lines.push(
+      `📅 Date: ${
+        entry.date_added
+          ? new Date(entry.date_added).toLocaleDateString()
+          : "Unknown"
+      }\n`,
+    );
+
+    if (!entry.players || Object.keys(entry.players).length === 0) {
+      lines.push("👥 No players found");
+    } else {
+      Object.entries(entry.players).forEach(([playerId, player], idx) => {
+        const rankNum = idx + 1;
+        if (!player) {
+          lines.push(
+            `${rankNum}) Player ID: ${playerId} (Invalid player data)`,
+          );
+          return;
+        }
+
+        const playerMounts = entry.mounts?.[playerId]?.number_of_mounts ?? 0;
+        lines.push(`${rankNum}) ${player.battletag ?? "Unknown Player"}`);
+        lines.push(`   🐎 Mounts: ${playerMounts}`);
+      });
+    }
+
+    return lines.join("\n");
   });
 
-  // Join all lines with newlines
-  // Discord messages have a 2000 character limit
-  return lines.join("\n").slice(0, 2000);
+  return formattedEntries.join("\n\n").slice(0, DISCORD_MAX_LENGTH);
+}
+
+const handleLeaderboardCommand = (
+  entries: LeaderboardEntry[],
+): APIInteractionResponse => {
+  const formattedMessage = formatLeaderboardData(entries);
+
+  return sendMsg(formattedMessage);
+};
+
+export const discordInviteUrl = (applicationID: string) => {
+  return `https://discord.com/api/oauth2/authorize?client_id=${applicationID}&scope=applications.commands`;
 };
