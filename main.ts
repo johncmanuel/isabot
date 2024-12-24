@@ -17,6 +17,11 @@ import { getExpirationDate } from "./lib/utils.ts";
 import { GUILD_REALM, GUILD_SLUG_NAME } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
 import { dummyLeaderboardEntry } from "./leaderboard/dummyData.ts";
+import {
+  createDiscordApp,
+  discordInviteUrl,
+  withErrorResponse,
+} from "./lib/discord.ts";
 
 // Order of Deno Cron executions
 // 1. Update Guild Data
@@ -92,6 +97,12 @@ const handler = async (req: Request) => {
   const { pathname } = new URL(req.url);
   const { handleCallback, getSessionId, signIn, signOut } = createOAuthHelpers(
     req,
+  );
+  const app = await createDiscordApp(
+    Deno.env.get("DISCORD_APPLICATION_ID") as string,
+    Deno.env.get("DISCORD_PUBLIC_KEY") as string,
+    Deno.env.get("DISCORD_TOKEN") as string,
+    "/discord",
   );
 
   switch (pathname) {
@@ -189,10 +200,7 @@ const handler = async (req: Request) => {
             }))
           );
 
-          const res2 = await kv.atomic().check({
-            key: charKey,
-            versionstamp: null,
-          })
+          const res2 = await kv.atomic()
             .set(charKey, playerCharacters)
             .commit();
           if (res2.ok) {
@@ -243,15 +251,25 @@ const handler = async (req: Request) => {
     case "/test":
       if (Deno.env.get("ENV") === "dev") {
         // await updateGuildData();
-        await Leaderboard.sendMountLBtoDiscord(
-          Deno.env.get("DISCORD_WEBHOOK_URL") as string,
-          dummyLeaderboardEntry,
-          `${getBaseUrl(req)}/signin`,
-        );
-        // await updateAllPlayersData();
+        // await Leaderboard.sendMountLBtoDiscord(
+        //   Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+        //   dummyLeaderboardEntry,
+        //   `${getBaseUrl(req)}/signin`,
+        // );
+        await updateAllPlayersData();
         return new Response("Updated guild data, other stuff too");
       }
       return new Response("Not found", { status: 404 });
+    case "/discord":
+      return withErrorResponse(app)(req);
+    case "/invite":
+      return Response.redirect(
+        discordInviteUrl(Deno.env.get("DISCORD_APPLICATION_ID") as string),
+      );
+    case "/code": {
+      const github = "https://github.com/johncmanuel/isabot";
+      return Response.redirect(github);
+    }
     default:
       return new Response("Not Found", { status: 404 });
   }
