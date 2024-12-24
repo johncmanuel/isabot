@@ -28,6 +28,18 @@ export const isabotSchema = {
           //   // Leave options empty if no options needed
           //   options: {},
           // },
+          // TODO: Implement slash cmd for retrieving specific leaderboard entry by date (in form MM-DD-YYYY)
+          // get: {
+          //   description: "Get a specific leaderboard entry by date",
+          //   options: {
+          //     date: {
+          //       description:
+          //         "Date of the leaderboard entry (in form MM-DD-YYYY)",
+          //       type: 3,
+          //       required: true,
+          //     },
+          //   },
+          // },
         },
       },
     },
