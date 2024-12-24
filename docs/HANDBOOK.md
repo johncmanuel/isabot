@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This handbook contains the relevant information on the leaderboard system for Isabot. Join the AR Club Discord server and guild on Bronzebeard-Shandris to join in on the fun.
+This handbook contains the relevant information on the leaderboard system for Isabot. Join the AR Club Discord server and guild on Bronzebeard-Shandris and compete!
 
 ## Privacy
 
