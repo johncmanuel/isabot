@@ -266,6 +266,10 @@ const handler = async (req: Request) => {
       return Response.redirect(
         discordInviteUrl(Deno.env.get("DISCORD_APPLICATION_ID") as string),
       );
+    case "/code": {
+      const github = "https://github.com/johncmanuel/isabot";
+      return Response.redirect(github);
+    }
     default:
       return new Response("Not Found", { status: 404 });
   }
