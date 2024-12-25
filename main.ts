@@ -172,6 +172,10 @@ const handler = async (req: Request) => {
       const charKey = kvKeys.characters.concat(sub);
       const charKV = await kv.get<PlayerCharacterKV[]>(charKey);
 
+      // TODO: Remove current check and instead compare last time the characters was inserted for a specific player since we want players to update
+      // their list of characters. For example, when logging in for first time at 16:00, insert new characters. If they try to login again
+      // at 16:30, their character list won't be updated. They'll have to wait until 17:00 or 18:00 to update their characters again. This is to
+      // prevent abuse of Blizzard's API
       if (
         charKV.value !== null && charKV.versionstamp !== null &&
         charKV.value.length > 0
