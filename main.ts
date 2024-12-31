@@ -1,12 +1,9 @@
 import {
   createOAuthHelpers,
-  getBaseUrl,
-  GuildMemberIds,
   kv,
   kvKeys,
   PlayerCharacterKV,
   PlayerCharactersKV,
-  PlayerSchema,
 } from "./lib/kv-oauth.ts";
 import {
   BattleNetClient,
@@ -14,14 +11,18 @@ import {
   updateGuildData,
 } from "./lib/bnet.ts";
 import { getExpirationDate } from "./lib/utils.ts";
-import { GUILD_REALM, GUILD_SLUG_NAME } from "./lib/consts.ts";
 import { Leaderboard } from "./leaderboard/lb.ts";
-import { dummyLeaderboardEntry } from "./leaderboard/dummyData.ts";
+// import { dummyLeaderboardEntry } from "./leaderboard/dummyData.ts";
 import {
   createDiscordApp,
   discordInviteUrl,
   withErrorResponse,
 } from "./lib/discord.ts";
+import {
+  savePlayer,
+  savePlayerGuildCharacters,
+  savePlayersMounts,
+} from "./lib/service.ts";
 
 // Order of Deno Cron executions
 // 1. Update Guild Data
@@ -138,7 +139,6 @@ const handler = async (req: Request) => {
       const expiresInDate = Math.floor(getExpirationDate(expiresIn));
       const client = new BattleNetClient(accessToken);
 
-      // insert user into KV
       const userinfo = await client.getAccountUserInfo();
       if (userinfo === null) {
         console.error("Failed to fetch user info from API");
@@ -147,100 +147,16 @@ const handler = async (req: Request) => {
       const { sub, battletag } = userinfo;
       console.log("Player:", battletag);
 
-      // see more on secondary keys/indices
-      // https://docs.deno.com/deploy/kv/manual/#improve-querying-with-secondary-indexes
-      const key = kvKeys.info.concat(sub);
-      const player: PlayerSchema = {
-        // Since the player's battle tag will be public, remove the discriminator (is that what u call it?)
-        // so they don't get spammed to death by bots selling gold
+      // Since the player's battle tag will be public, remove the discriminator (is that what u call it?)
+      // so they don't get spammed to death by bots selling gold
+      await savePlayer({
         battleTag: battletag.split("#")[0],
         accessToken,
         expiresIn: expiresInDate,
-      };
+      }, sub);
 
-      const res = await kv.atomic().check({ key, versionstamp: null }).set(
-        key,
-        player,
-      ).commit();
-      if (res.ok) {
-        console.log("Player not yet in the KV, inserting them now.");
-      } else {
-        console.error("Player already in the KV");
-      }
-
-      // check if player's characters already exist. insert if not
-      const charKey = kvKeys.characters.concat(sub);
-      const charKV = await kv.get<PlayerCharacterKV[]>(charKey);
-
-      // TODO: Remove current check and instead compare last time the characters was inserted for a specific player since we want players to update
-      // their list of characters. For example, when logging in for first time at 16:00, insert new characters. If they try to login again
-      // at 16:30, their character list won't be updated. They'll have to wait until 17:00 or 18:00 to update their characters again. This is to
-      // prevent abuse of Blizzard's API
-      if (
-        charKV.value !== null && charKV.versionstamp !== null &&
-        charKV.value.length > 0
-      ) {
-        console.log("Found player characters in KV, no need to fetch from API");
-      } else {
-        const { access_token } = await getClientCredentials();
-        const memberIds = await getGuildData(client, access_token);
-        const data = await client.getAccountWoWProfileSummary();
-        if (data === null) {
-          console.error("Failed to fetch WoW profile summary from API");
-        } else {
-          const playerCharacters = data.wow_accounts.flatMap((account) =>
-            account.characters.filter((character) =>
-              GUILD_REALM.includes(character.realm.slug)
-            ).filter((character) => memberIds.has(character.id)).map((
-              character,
-            ) => ({
-              name: character.name,
-              id: character.id,
-              realm: {
-                name: character.realm.name,
-                slug: character.realm.slug,
-                id: character.realm.id,
-              },
-            }))
-          );
-
-          const res2 = await kv.atomic()
-            .set(charKey, playerCharacters)
-            .commit();
-          if (res2.ok) {
-            console.log(
-              "Characters not yet in the KV, inserting them now",
-            );
-          } else {
-            console.error("Failed to insert characters in the KV");
-          }
-        }
-      }
-
-      // Check if player's mounts already
-      const mountsKey = kvKeys.mounts.concat(sub);
-      const mountsKV = await kv.get<{ totalNumMounts: number }>(mountsKey);
-      if (mountsKV.value !== null && mountsKV.versionstamp !== null) {
-        console.log("Found mounts in KV, no need to fetch from API");
-      } else {
-        const mounts = await client.getAccountMountsCollection();
-        let totalNumMounts = 0;
-        if (mounts === null) {
-          console.error("Failed to fetch mounts data from API");
-        } else {
-          totalNumMounts = mounts.mounts.length;
-        }
-        const res3 = await kv.atomic()
-          .set(mountsKey, { totalNumMounts })
-          .commit();
-        if (res3.ok) {
-          console.log("Mounts not yet in the KV, inserting:", {
-            totalNumMounts,
-          });
-        } else {
-          console.error("Failed to insert mounts into KV");
-        }
-      }
+      await savePlayerGuildCharacters(client, sub);
+      await savePlayersMounts(client, sub);
 
       return response;
     }
@@ -260,7 +176,9 @@ const handler = async (req: Request) => {
         //   dummyLeaderboardEntry,
         //   `${getBaseUrl(req)}/signin`,
         // );
-        await updateAllPlayersData();
+        // await updateAllPlayersData();
+        const allEntries = await Array.fromAsync(kv.list({ prefix: [] }));
+        console.log(allEntries);
         return new Response("Updated guild data, other stuff too");
       }
       return new Response("Not found", { status: 404 });
@@ -277,50 +195,6 @@ const handler = async (req: Request) => {
     default:
       return new Response("Not Found", { status: 404 });
   }
-};
-
-// Only contains IDs of all the characters in the guild, which are
-// used for comparisons with a user's characters. This queries the KV for data;
-// if not found, fetch from the API and store in the KV.
-export const getGuildData = async (
-  client: BattleNetClient,
-  clientCredentialsToken: string,
-) => {
-  const guildKey = [...kvKeys.guild, GUILD_SLUG_NAME];
-  const guildKV = await kv.get<GuildMemberIds>(guildKey);
-
-  if (guildKV.value !== null && guildKV.versionstamp !== null) {
-    console.log("Found guild data in KV");
-    return guildKV.value;
-  }
-
-  console.log("Guild not in KV, fetching from API...");
-  const guild = await client.getGuildRoster(
-    clientCredentialsToken,
-    GUILD_REALM,
-    GUILD_SLUG_NAME,
-  );
-
-  if (guild === null) {
-    console.error("Failed to fetch guild data from API, returning empty set");
-    return new Set<number>();
-  }
-
-  // fun fact: sets can be stored in KV
-  // https://docs.deno.com/deploy/kv/manual/key_space/#values
-  const guildMemberIds = new Set(
-    guild.members.map((member) => member.character.id),
-  );
-
-  const res = await kv.atomic().set(guildKey, guildMemberIds).commit();
-  if (!res.ok) {
-    console.error(
-      "Failed to store guild data in KV cache, returning data from API response instead",
-    );
-  } else {
-    console.log("Stored guild data in KV cache");
-  }
-  return guildMemberIds;
 };
 
 if (import.meta.main) {
