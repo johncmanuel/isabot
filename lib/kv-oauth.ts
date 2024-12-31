@@ -50,6 +50,7 @@ export interface PlayerSchema {
   battleTag: string;
   accessToken: string;
   expiresIn: number;
+  updateExpiresAt?: number; // Once current time is past this value, player's data can be updated
 }
 
 export const createOAuthHelpers = (req: Request) => {

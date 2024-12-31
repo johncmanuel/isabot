@@ -27,31 +27,66 @@ export const savePlayer = async (
   return p;
 };
 
-// export const getPlayer = async (sub: string): Promise<PlayerSchema | null> => {
-//   const key = kvKeys.info.concat(sub);
-//   const player = await kv.get(key);
-// }
+// Saves player without checks like above
+export const savePlayerNoCheck = async (p: PlayerSchema, sub: string) => {
+  const key = kvKeys.info.concat(sub);
+  const res = await kv.atomic().set(key, p).commit();
+  if (res.ok) {
+    console.log("Saved player data in KV");
+  } else {
+    console.error("Couldn't save player in the KV");
+  }
+};
+
+export const getPlayer = async (sub: string): Promise<PlayerSchema | null> => {
+  const key = kvKeys.info.concat(sub);
+  const player = await kv.get<PlayerSchema>(key);
+  if (player.value === null && player.versionstamp === null) {
+    return null;
+  }
+  return player.value;
+};
 
 export const savePlayerGuildCharacters = async (
   client: BattleNetClient,
   sub: string,
 ) => {
-  // check if player's characters already exist. insert if not
-  const charKey = kvKeys.characters.concat(sub);
-  const charKV = await kv.get<PlayerCharacterKV[]>(charKey);
   let playerCharacters: PlayerCharacterKV[] = [];
+  const player = await getPlayer(sub);
+
+  if (player === null) {
+    console.error("Player not found in KV");
+    return playerCharacters;
+  }
+
+  const charKey = kvKeys.characters.concat(sub);
+  const currentTimeSeconds = Math.floor(Date.now() / 1000);
+
+  if (
+    player.updateExpiresAt !== undefined &&
+    player.updateExpiresAt > currentTimeSeconds
+  ) {
+    console.log("Can't update characters yet for", player.battleTag);
+    console.log(
+      "Expires at:",
+      player.updateExpiresAt,
+      "current time in seconds:",
+      currentTimeSeconds,
+      "remaining time (seconds):",
+      player.updateExpiresAt - currentTimeSeconds,
+    );
+    return playerCharacters;
+  }
+  console.log(
+    "Expiration time passed for",
+    player.battleTag,
+    "updating now...",
+  );
 
   // TODO: Remove current check and instead compare last time the characters was inserted for a specific player since we want players to update
   // their list of characters. For example, when logging in for first time at 16:00, insert new characters. If they try to login again
   // at 16:30, their character list won't be updated. They'll have to wait until 17:00 or 18:00 to update their characters again. This is to
   // prevent abuse of Blizzard's API
-  if (
-    charKV.value !== null && charKV.versionstamp !== null &&
-    charKV.value.length > 0
-  ) {
-    console.log("Found player characters in KV, no need to fetch from API");
-    return charKV.value;
-  }
 
   const { access_token } = await getClientCredentials();
   const memberIds = await getGuildData(client, access_token);
@@ -60,6 +95,7 @@ export const savePlayerGuildCharacters = async (
     console.error("Failed to fetch WoW profile summary from API");
     return playerCharacters;
   }
+
   playerCharacters = data.wow_accounts.flatMap((account) =>
     account.characters.filter((character) =>
       GUILD_REALM.includes(character.realm.slug)
@@ -76,16 +112,24 @@ export const savePlayerGuildCharacters = async (
     }))
   );
 
-  const res2 = await kv.atomic()
+  const res = await kv.atomic()
     .set(charKey, playerCharacters)
     .commit();
-  if (res2.ok) {
+  if (res.ok) {
     console.log(
-      "Characters not yet in the KV, inserting them now",
+      "inserting characters for",
+      player?.battleTag,
+      "now...",
     );
   } else {
     console.error("Failed to insert characters in the KV");
   }
+
+  // Update expiration time by adding the current time by 1 hour (3600 seconds)
+  // and insert it in the KV
+  player.updateExpiresAt = currentTimeSeconds + 3600;
+  await savePlayerNoCheck(player, sub);
+
   return playerCharacters;
 };
 
@@ -146,16 +190,18 @@ export const savePlayersMounts = async (
     console.log("Found mounts in KV, no need to fetch from API");
     return totalNumMounts;
   }
+
   const mounts = await client.getAccountMountsCollection();
   if (mounts === null) {
     console.error("Failed to fetch mounts data from API");
   } else {
     totalNumMounts = mounts.mounts.length;
   }
-  const res3 = await kv.atomic()
+
+  const res = await kv.atomic()
     .set(mountsKey, { totalNumMounts })
     .commit();
-  if (res3.ok) {
+  if (res.ok) {
     console.log("Mounts not yet in the KV, inserting:", {
       totalNumMounts,
     });
