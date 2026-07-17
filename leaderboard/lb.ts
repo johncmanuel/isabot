@@ -4,7 +4,7 @@ import { GUILD_NAME } from "../lib/consts.ts";
 import {
   APIEmbed,
   RESTPostAPIWebhookWithTokenJSONBody,
-} from "npm:discord-api-types/v10";
+} from "discord-api-types/v10";
 
 export class Leaderboard {
   public static async createEntry(): Promise<LeaderboardEntry> {

@@ -6,7 +6,7 @@ import {
   createHelpers,
   getRequiredEnv,
   type OAuth2ClientConfig,
-} from "jsr:@deno/kv-oauth";
+} from "@deno/kv-oauth";
 
 // https://jsr.io/@deno/kv-oauth/0.11.0/lib/_kv.ts#L2
 const DENO_KV_PATH_KEY = "DENO_KV_PATH";
