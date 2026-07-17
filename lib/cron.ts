@@ -17,12 +17,12 @@ import { Leaderboard } from "../leaderboard/lb.ts";
 // 3. Create and send new leaderboard entry to Discord webhook
 
 // Runs at 10 AM PST (UTC-8) = 18:00 UTC on Saturdays
-Deno.cron("Update Guild Data", "0 18 * * SAT", async () => {
+Deno.cron("Update Guild Data", "0 18 * * 6", async () => {
   await updateGuildData();
 });
 
 // Runs at 5 PM PST (UTC-8) = 00:00 UTC on Sundays
-Deno.cron("Update all KV players data", "0 0 * * SUN", async () => {
+Deno.cron("Update all KV players data", "0 0 * * 0", async () => {
   // Update mounts for all players using client credentials by first
   // iterating through all characters for a particular player and
   // then updating the total number of mounts (for example)
@@ -30,7 +30,7 @@ Deno.cron("Update all KV players data", "0 0 * * SUN", async () => {
 });
 
 // Runs at 12 PM PST (UTC-8) = 20:00 UTC on Sundays
-Deno.cron("Create and send new leaderboard entry", "0 20 * * SUN", async () => {
+Deno.cron("Create and send new leaderboard entry", "0 20 * * 0", async () => {
   console.log("Creating new leaderboard entry...");
   const entry = await Leaderboard.createEntry();
   console.log("Created new leaderboard entry, sending to webhook");
