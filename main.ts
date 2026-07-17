@@ -30,12 +30,12 @@ import {
 // 3. Create and send new leaderboard entry to Discord webhook
 
 // Send at 10 AM PST on Saturday
-Deno.cron("Update Guild Data", "0 18 * * 7", async () => {
+Deno.cron("Update Guild Data", "0 18 * * 6", async () => {
   await updateGuildData();
 });
 
 // Send at 5 PM PST on Saturday
-Deno.cron("Update all KV players data", "0 0 * * 1", async () => {
+Deno.cron("Update all KV players data", "0 0 * * 0", async () => {
   // Update mounts for all players using client credentials by first
   // iterating through all characters for a particular player and
   // then updating the total number of mounts (for example)
@@ -83,7 +83,7 @@ export const updateAllPlayersData = async () => {
 };
 
 // Send at 12 PM PST on Sunday
-Deno.cron("Create and send new leaderboard entry", "0 20 * * 1", async () => {
+Deno.cron("Create and send new leaderboard entry", "0 20 * * 0", async () => {
   console.log("Creating new leaderboard entry...");
   const entry = await Leaderboard.createEntry();
   console.log("Created new leaderboard entry, sending to webhook");
