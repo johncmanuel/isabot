@@ -42,6 +42,18 @@ Deno.cron("Update all KV players data", { dayOfWeek: { exact: 1 }, hour: { exact
   await updateAllPlayersData();
 });
 
+// Send at 12 PM PST on Sunday
+Deno.cron("Create and send new leaderboard entry", { dayOfWeek: { exact: 1 }, hour: { exact: 20 }, minute: { exact: 0 } }, async () => {
+  console.log("Creating new leaderboard entry...");
+  const entry = await Leaderboard.createEntry();
+  console.log("Created new leaderboard entry, sending to webhook");
+  await Leaderboard.sendMountLBtoDiscord(
+    Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+    entry,
+    `${Deno.env.get("BASE_URL")}/signin`,
+  );
+});
+
 // Get highest number of mounts for a player
 export const updateAllPlayersData = async () => {
   console.log("Updating all players data...");
@@ -81,18 +93,6 @@ export const updateAllPlayersData = async () => {
     await updateMountsInKV(playerId, totalNumMounts);
   }
 };
-
-// Send at 12 PM PST on Sunday
-Deno.cron("Create and send new leaderboard entry", { dayOfWeek: { exact: 1 }, hour: { exact: 20 }, minute: { exact: 0 } }, async () => {
-  console.log("Creating new leaderboard entry...");
-  const entry = await Leaderboard.createEntry();
-  console.log("Created new leaderboard entry, sending to webhook");
-  await Leaderboard.sendMountLBtoDiscord(
-    Deno.env.get("DISCORD_WEBHOOK_URL") as string,
-    entry,
-    `${Deno.env.get("BASE_URL")}/signin`,
-  );
-});
 
 const handler = async (req: Request) => {
   const { pathname } = new URL(req.url);
